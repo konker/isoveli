@@ -29,6 +29,7 @@
 from ch9 import *
 import usb.core
 import usb.util
+import usb.control
 import sys
 import time
 
@@ -161,6 +162,13 @@ class AndroidAccessory(object):
         for i in intf:
             print i
 
+        usb.util.claim_interface(dev, intf)
+        print "KONK"
+        print usb.util.build_request_type(usb.util.CTRL_IN, usb.util.CTRL_TYPE_STANDARD, usb.util.CTRL_RECIPIENT_INTERFACE)
+        print usb.control.get_interface(dev, 1)
+        print usb.control.get_status(dev, intf)
+        print usb.control.get_configuration(dev)
+
         ep_in = usb.util.find_descriptor(intf,
                                          custom_match = lambda e: \
                                          usb.util.endpoint_direction(e.bEndpointAddress) == \
@@ -179,14 +187,47 @@ class AndroidAccessory(object):
         print "IN  ep addr is ", hex(ep_in.bEndpointAddress)
 
         #do ctrl transfers to setup accessory mode
-        print USB_SETUP_DEVICE_TO_HOST | USB_SETUP_TYPE_VENDOR | USB_SETUP_RECIPIENT_DEVICE
-        msg = dev.ctrl_transfer(0xc0, 51, 0, 0, 2)  #Read 2 bytes
-        #msg = dev.ctrl_transfer(0x0, 0, 0, 0)  #Read 2 bytes
+        bmRequestType = USB_SETUP_DEVICE_TO_HOST | USB_SETUP_TYPE_VENDOR | USB_SETUP_RECIPIENT_DEVICE
+        bRequest = ACCESSORY_GET_PROTOCOL
+        wLength = 2
+        msg = dev.ctrl_transfer(bmRequestType, bRequest, 0, 0, wLength)  #Read 2 bytes
+        #msg = dev.ctrl_transfer(0x80, 0)
 
         devVersion = msg[1] << 8 | msg[0];
-        print "Version Code Device:", devVersion
-        time.sleep(1)   #sometimes hangs on the next transfer :(
+        #print "Version Code Device:", devVersion
+        #time.sleep(1)   #sometimes hangs on the next transfer :(
 
+        #print ep_out.read(16)
+        # these are based onlibusb_control_transfer(handle,0x40,52,0,0,(char*)manufacturer,strlen(manufacturer),0);
+        assert dev.ctrl_transfer(0x40, 52, 0, 0, self.manufacturer) == len(manufacturer)
+        assert dev.ctrl_transfer(0x40, 52, 0, 1, self.model) == len(model)
+        assert dev.ctrl_transfer(0x40, 52, 0, 2, self.description) == len(description)
+        assert dev.ctrl_transfer(0x40, 52, 0, 3, self.version) == len(version)
+        assert dev.ctrl_transfer(0x40, 52, 0, 4, self.uri) == len(uri)
+        assert dev.ctrl_transfer(0x40, 52, 0, 5, self.serial) == len(serial)
+
+        print "Accessory Identification sent", devVersion
+
+        assert dev.ctrl_transfer(0x40, 53, 0, 0, "") == 0
+
+        print "Put device into accessory mode", devVersion
+        try:
+            data = ep_in.read(16)
+            print data
+        except usb.USBError:
+            print "USB error"
+            del dev
+            del cfg
+            del intf
+            del ep_in
+            del ep_out
+            raise
+
+        del dev
+        del cfg
+        del intf
+        del ep_in
+        del ep_out
 
 if __name__ == '__main__':
     main()
