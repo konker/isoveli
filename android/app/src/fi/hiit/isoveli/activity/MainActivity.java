@@ -16,10 +16,12 @@ import com.actionbarsherlock.app.SherlockActivity;
 
 import fi.hiit.isoveli.R;
 import fi.hiit.isoveli.IsoVeliApplication;
+import fi.hiit.isoveli.DataController;
 
 public class MainActivity extends SherlockActivity
 {
     private IsoVeliApplication app;
+    private DataController dataController;
 
     private TextView textMessage;
 
@@ -31,6 +33,7 @@ public class MainActivity extends SherlockActivity
         setContentView(R.layout.main);
 
         this.app = (IsoVeliApplication) getApplication();
+        this.dataController = new DataController();
 
         textMessage = (TextView)findViewById(R.id.textMessage);
         textMessage.setText(R.string.app_name);
