@@ -38,9 +38,11 @@ IN = 0x85
 OUT = 0x07
 VID = 0x18D1
 PID = 0x4E22
-ACCESSORY_PID = 0x2D01
-ACCESSORY_PID_ALT = 0x2D00
 #define LEN 2
+"""
+ACCESSORY_PID = 0x2d01
+ACCESSORY_PID_ALT = 0x2d00
+
 """
 USB_STATE_MASK                                    = 0xf0
 
@@ -57,7 +59,7 @@ USB_STATE_ADDRESSING                              = 0x70
 USB_STATE_CONFIGURING                             = 0x80
 USB_STATE_RUNNING                                 = 0x90
 USB_STATE_ERROR                                   = 0xa0
-
+"""
 
 USB_ACCESSORY_VENDOR_ID       = 0x18D1
 USB_ACCESSORY_PRODUCT_ID      = 0x2D00
@@ -79,8 +81,17 @@ def main():
     Act as a virtual USB accessory, such that when plugged into a USB 
     host, can be accessed via USB.
     """
-    usb_handler = UsbHandler(0x04e8, 0x681c)
-    accessory = AndroidAccessory(usb_handler, 'HIIT', 'DataSink', 'DataSink DESCRIPTION', '1.0', 'http://www.hiit.fi/', '0466667901')
+    #usb_handler = UsbHandler(0x04e8, 0x681c)
+    vendor_id = 0x18d1
+    product_id = 0x4e22
+    try:
+        usb_handler = UsbHandler(vendor_id, product_id)
+        accessory = AndroidAccessory(usb_handler, 'HIIT', 'DataSink', 'DataSink DESCRIPTION', '1.0', 'http://www.hiit.fi/', '0466667901')
+    except ValueError:
+        usb_handler = UsbHandler(vendor_id, ACCESSORY_PID)
+        data = usb_handler.ep_in.read(16)
+        print data
+
 
 
 class UsbHandler(object):
@@ -88,25 +99,36 @@ class UsbHandler(object):
         self.vendor_id = vendor_id
         self.product_id = product_id
 
-        """
-        self.device = self.device = usb.core.find(idVendor=vendor_id, idProduct=product_id)
-        if (self.device == None):
-            print "ERROR: Device not found"
-            exit()
+        self.device = usb.core.find(idVendor=self.vendor_id, idProduct=self.product_id)
+        if self.device is None:
+            raise ValueError('Device not found')
 
-        if self.device.is_kernel_driver_active(0) is True:
-            self.device.detach_kernel_driver(0)
         if self.device.is_kernel_driver_active(1) is True:
             self.device.detach_kernel_driver(1)
-        if self.device.is_kernel_driver_active(2) is True:
-            self.device.detach_kernel_driver(2)
-        if self.device.is_kernel_driver_active(3) is True:
-            self.device.detach_kernel_driver(3)
 
-        #self.device.set_configuration()
-        """
+        self.find_endpoints()
 
         print "UsbHandler.__init__"
+
+
+    def find_endpoints(self):
+        cfg = self.device.get_active_configuration()
+        intf = cfg[(1,0)]
+
+        self.ep_in = usb.util.find_descriptor(intf,
+                                         custom_match = lambda e: \
+                                         usb.util.endpoint_direction(e.bEndpointAddress) == \
+                                         usb.util.ENDPOINT_IN)
+
+        self.ep_out = usb.util.find_descriptor(intf,
+                                          custom_match = lambda e: \
+                                          usb.util.endpoint_direction(e.bEndpointAddress) == \
+                                          usb.util.ENDPOINT_OUT)
+
+        assert self.ep_out is not None
+        assert self.ep_in is not None
+        print "OUT ep addr is ", hex(self.ep_out.bEndpointAddress)
+        print "IN  ep addr is ", hex(self.ep_in.bEndpointAddress)
 
 
 class AndroidAccessory(object):
@@ -121,28 +143,56 @@ class AndroidAccessory(object):
         self.uri = uri
         self.serial = serial
 
-        self.foo()
+        self.switch_device()
+        time.sleep(4)
+        self.connect_accessory()
         print "AndroidAccessory.__init__"
 
-    def get_protocol(self):
-        #self.usb_handler.device.ctrl_transfer(0x21, 0x09, 0x81, 0, INIT_PACKET1, 100)
-        protocol = self.usb_handler.device.ctrl_transfer(USB_SETUP_DEVICE_TO_HOST |
-                                                         USB_SETUP_TYPE_VENDOR |
-                                                         USB_SETUP_RECIPIENT_DEVICE,
-                                                         ACCESSORY_GET_PROTOCOL, 0, 0)
-        print USB_SETUP_DEVICE_TO_HOST | USB_SETUP_TYPE_VENDOR | USB_SETUP_RECIPIENT_DEVICE
-        return protocol
 
+    def connect_accessory(self):
+        self.usb_handler = UsbHandler(self.usb_handler.vendor_id, ACCESSORY_PID)
+        print "Accessory connected"
 
-    def send_string(self, index, s):
-        self.usb_handler.device.ctrl_transfer(USB_SETUP_HOST_TO_DEVICE |
-                                              USB_SETUP_TYPE_VENDOR |
-                                              USB_SETUP_RECIPIENT_DEVICE,
-                                              ACCESSORY_SEND_STRING, 0, 0, index, s)
 
     def switch_device(self):
         protocol = self.get_protocol()
-        print "PROTOCOL: ", protocol
+
+        if protocol < 1:
+            raise "Protocol not supported: ", protocol
+        
+        print "Device supports protocol: ", protocol
+
+        self.send_string(ACCESSORY_STRING_MANUFACTURER, self.manufacturer)
+        self.send_string(ACCESSORY_STRING_MODEL, self.model)
+        self.send_string(ACCESSORY_STRING_DESCRIPTION, self.description)
+        self.send_string(ACCESSORY_STRING_VERSION, self.version)
+        self.send_string(ACCESSORY_STRING_URI, self.uri)
+        self.send_string(ACCESSORY_STRING_SERIAL, self.serial)
+
+        self.start_accessory()
+        print "Accessory started"
+
+
+    def get_protocol(self):
+        bmRequestType = USB_SETUP_DEVICE_TO_HOST | USB_SETUP_TYPE_VENDOR | USB_SETUP_RECIPIENT_DEVICE
+        bRequest = ACCESSORY_GET_PROTOCOL
+        wLength = 2
+        msg = self.usb_handler.device.ctrl_transfer(bmRequestType, bRequest, 0, 0, wLength)  #Read 2 bytes
+
+        return  msg[1] << 8 | msg[0];
+
+
+    def start_accessory(self):
+        bmRequestType = USB_SETUP_HOST_TO_DEVICE | USB_SETUP_TYPE_VENDOR | USB_SETUP_RECIPIENT_DEVICE
+        bRequest = ACCESSORY_START
+        self.usb_handler.device.ctrl_transfer(bmRequestType, bRequest, 0, 0)
+
+
+    def send_string(self, index, s):
+        bmRequestType = USB_SETUP_HOST_TO_DEVICE | USB_SETUP_TYPE_VENDOR | USB_SETUP_RECIPIENT_DEVICE
+        bRequest = ACCESSORY_SEND_STRING
+        assert self.usb_handler.device.ctrl_transfer(bmRequestType, bRequest, 0, index, s) == len(s)
+
 
     def foo(self):
         dev = usb.core.find(idVendor=self.usb_handler.vendor_id, idProduct=self.usb_handler.product_id)
@@ -162,12 +212,12 @@ class AndroidAccessory(object):
         for i in intf:
             print i
 
-        usb.util.claim_interface(dev, intf)
-        print "KONK"
-        print usb.util.build_request_type(usb.util.CTRL_IN, usb.util.CTRL_TYPE_STANDARD, usb.util.CTRL_RECIPIENT_INTERFACE)
-        print usb.control.get_interface(dev, 1)
-        print usb.control.get_status(dev, intf)
-        print usb.control.get_configuration(dev)
+        #usb.util.claim_interface(dev, intf)
+        #print "KONK"
+        #print usb.util.build_request_type(usb.util.CTRL_IN, usb.util.CTRL_TYPE_STANDARD, usb.util.CTRL_RECIPIENT_INTERFACE)
+        #print usb.control.get_interface(dev, 1)
+        #print usb.control.get_status(dev, intf)
+        #print usb.control.get_configuration(dev)
 
         ep_in = usb.util.find_descriptor(intf,
                                          custom_match = lambda e: \
@@ -194,9 +244,10 @@ class AndroidAccessory(object):
         #msg = dev.ctrl_transfer(0x80, 0)
 
         devVersion = msg[1] << 8 | msg[0];
-        #print "Version Code Device:", devVersion
-        #time.sleep(1)   #sometimes hangs on the next transfer :(
+        print "Version Code Device:", devVersion
+        time.sleep(1)   #sometimes hangs on the next transfer :(
 
+        exit(0)
         #print ep_out.read(16)
         # these are based onlibusb_control_transfer(handle,0x40,52,0,0,(char*)manufacturer,strlen(manufacturer),0);
         assert dev.ctrl_transfer(0x40, 52, 0, 0, self.manufacturer) == len(manufacturer)
