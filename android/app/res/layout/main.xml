@@ -9,5 +9,17 @@
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
         />
+    <Button
+        android:id="@+id/buttonPing"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:text="Ping"
+        />
+    <Button
+        android:id="@+id/buttonPong"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:text="Pong"
+        />
 </LinearLayout>
 

@@ -23,7 +23,7 @@
 	
 
 #include <stdio.h>
-#include <usb.h>
+#include <darwin_usb.h>
 #include <libusb.h>
 #include <string.h>
 #include <unistd.h>

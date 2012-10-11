@@ -40,30 +40,12 @@ VID = 0x18D1
 PID = 0x4E22
 #define LEN 2
 """
-ACCESSORY_PID = 0x2d01
-ACCESSORY_PID_ALT = 0x2d00
-
-"""
-USB_STATE_MASK                                    = 0xf0
-
-USB_STATE_DETACHED                                = 0x10
-USB_DETACHED_SUBSTATE_INITIALIZE                  = 0x11        
-USB_DETACHED_SUBSTATE_WAIT_FOR_DEVICE             = 0x12
-USB_DETACHED_SUBSTATE_ILLEGAL                     = 0x13
-USB_ATTACHED_SUBSTATE_SETTLE                      = 0x20
-USB_ATTACHED_SUBSTATE_RESET_DEVICE                = 0x30    
-USB_ATTACHED_SUBSTATE_WAIT_RESET_COMPLETE         = 0x40
-USB_ATTACHED_SUBSTATE_WAIT_SOF                    = 0x50
-USB_ATTACHED_SUBSTATE_GET_DEVICE_DESCRIPTOR_SIZE  = 0x60
-USB_STATE_ADDRESSING                              = 0x70
-USB_STATE_CONFIGURING                             = 0x80
-USB_STATE_RUNNING                                 = 0x90
-USB_STATE_ERROR                                   = 0xa0
-"""
 
 USB_ACCESSORY_VENDOR_ID       = 0x18D1
 USB_ACCESSORY_PRODUCT_ID      = 0x2D00
 USB_ACCESSORY_ADB_PRODUCT_ID  = 0x2D01
+USB_REQUEST_SET_CONFIGURATION = 0x09    # Standard Device Request - SET CONFIGURATION
+
 
 ACCESSORY_STRING_MANUFACTURER = 0
 ACCESSORY_STRING_MODEL        = 1
@@ -75,6 +57,7 @@ ACCESSORY_STRING_SERIAL       = 5
 ACCESSORY_GET_PROTOCOL        = 51
 ACCESSORY_SEND_STRING         = 52
 ACCESSORY_START               = 53
+ACCESSORY_STOP                = 59
 
 def main():
     """
@@ -82,20 +65,48 @@ def main():
     host, can be accessed via USB.
     """
     #usb_handler = UsbHandler(0x04e8, 0x681c)
-    vendor_id = 0x18d1
+    vendor_id = USB_ACCESSORY_VENDOR_ID
     product_id = 0x4e22
     try:
         usb_handler = UsbHandler(vendor_id, product_id)
         accessory = AndroidAccessory(usb_handler, 'HIIT', 'DataSink', 'DataSink DESCRIPTION', '1.0', 'http://www.hiit.fi/', '0466667901')
     except ValueError:
-        usb_handler = UsbHandler(vendor_id, ACCESSORY_PID)
-        data = usb_handler.ep_in.read(16)
-        print data
+        print "Normal device not found."
+        try:
+            usb_handler = UsbHandler(vendor_id, USB_ACCESSORY_ADB_PRODUCT_ID, True)
+        except ValueError:
+            print "Accessory device not found. Exiting."
+            exit(1)
 
+        """
+        while(True):
+            try:
+                data = usb_handler.ep_out.read(128)
+                print data
+            except Exception as ex:
+                print ex
+        """
+
+        while(raw_input("--> ")):
+            s = raw_input('r/w: ')
+            try:
+                if (s == 'r'):
+                    data = usb_handler.ep_out.read(128)
+                elif (s == 'w'):
+                    data = usb_handler.ep_in.write("KONKERSKI")
+                else:
+                    usb_handler = UsbHandler(vendor_id, USB_ACCESSORY_ADB_PRODUCT_ID)
+                print data
+            except Exception as ex:
+                print ex
+            except KeyboardInterrupt:
+                print "Exiting."
+                accessory.stop_accessory()
+                exit()
 
 
 class UsbHandler(object):
-    def __init__(self, vendor_id, product_id):
+    def __init__(self, vendor_id, product_id, set_conf=False):
         self.vendor_id = vendor_id
         self.product_id = product_id
 
@@ -103,17 +114,28 @@ class UsbHandler(object):
         if self.device is None:
             raise ValueError('Device not found')
 
-        if self.device.is_kernel_driver_active(1) is True:
-            self.device.detach_kernel_driver(1)
+        try:
+            if self.device.is_kernel_driver_active(1) is True:
+                self.device.detach_kernel_driver(1)
+        except:
+            pass
+
+        if set_conf and False:
+            self.set_configuration(1)
 
         self.find_endpoints()
-
         print "UsbHandler.__init__"
+
+
+    def set_configuration(self, value):
+        bmRequestType = USB_SETUP_HOST_TO_DEVICE | USB_SETUP_TYPE_STANDARD | USB_SETUP_RECIPIENT_DEVICE
+        bRequest = USB_REQUEST_SET_CONFIGURATION
+        self.device.ctrl_transfer(bmRequestType, bRequest, 0, value)
 
 
     def find_endpoints(self):
         cfg = self.device.get_active_configuration()
-        intf = cfg[(1,0)]
+        intf = cfg[(0,0)]
 
         self.ep_in = usb.util.find_descriptor(intf,
                                          custom_match = lambda e: \
@@ -144,8 +166,6 @@ class AndroidAccessory(object):
         self.serial = serial
 
         self.switch_device()
-        time.sleep(4)
-        self.connect_accessory()
         print "AndroidAccessory.__init__"
 
 
@@ -194,6 +214,7 @@ class AndroidAccessory(object):
         assert self.usb_handler.device.ctrl_transfer(bmRequestType, bRequest, 0, index, s) == len(s)
 
 
+"""
     def foo(self):
         dev = usb.core.find(idVendor=self.usb_handler.vendor_id, idProduct=self.usb_handler.product_id)
         if dev is None:
@@ -263,23 +284,16 @@ class AndroidAccessory(object):
 
         print "Put device into accessory mode", devVersion
         try:
-            data = ep_in.read(16)
+            data = ep_out.read(16)
             print data
         except usb.USBError:
             print "USB error"
-            del dev
-            del cfg
-            del intf
-            del ep_in
-            del ep_out
-            raise
-
-        del dev
-        del cfg
-        del intf
-        del ep_in
-        del ep_out
+"""
 
 if __name__ == '__main__':
-    main()
+    try:
+        main()
+    except KeyboardInterrupt:
+        print "Exiting."
+        exit()
 
