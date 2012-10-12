@@ -64,7 +64,7 @@ def main():
 
     ep_in, ep_out = find_endpoints(device)
     try:
-        data = ep_in.read(64, timeout=10000)
+        data = device.read(ep_in.bEndpointAddress, 512, timeout=10000)
         print data
     except Exception as ex:
         print "Error reading: ", ex, " Exiting."
