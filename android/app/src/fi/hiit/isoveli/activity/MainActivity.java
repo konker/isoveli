@@ -184,8 +184,8 @@ public class MainActivity extends SherlockActivity implements Runnable
             mInputStream = new FileInputStream(fd);
             mOutputStream = new FileOutputStream(fd);
 
-            Thread thread = new Thread(null, this, "AccessoryThread");
-            thread.start();
+            //Thread thread = new Thread(null, this, "AccessoryThread");
+            //thread.start();
         }
         else {
             Log.d(IsoVeliApplication.TAG, "Main.openAccessory: Failed to open accessory");
@@ -224,7 +224,6 @@ public class MainActivity extends SherlockActivity implements Runnable
             @Override
             public void onClick(View view) {
                 Log.d(IsoVeliApplication.TAG, "Main.buttonPing clicked");
-                /*
                 if (mOutputStream != null) {
                     try {
                         mOutputStream.write(("KONKER " + MainActivity.counter++ + "").getBytes());
@@ -233,7 +232,6 @@ public class MainActivity extends SherlockActivity implements Runnable
                         Log.d(IsoVeliApplication.TAG, "IOException: " + ex);
                     }
                 }
-                */
             }
         });
 
@@ -242,7 +240,6 @@ public class MainActivity extends SherlockActivity implements Runnable
             @Override
             public void onClick(View view) {
                 Log.d(IsoVeliApplication.TAG, "Main.buttonPong clicked");
-                /*
                 if (mInputStream != null) {
                     try {
                         byte[] buf = new byte[128];
@@ -253,7 +250,6 @@ public class MainActivity extends SherlockActivity implements Runnable
                         Log.d(IsoVeliApplication.TAG, "IOException: " + ex);
                     }
                 }
-                */
             }
         });
     }

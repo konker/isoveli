@@ -23,7 +23,7 @@
 	
 
 #include <stdio.h>
-#include <darwin_usb.h>
+#include <usb.h>
 #include <libusb.h>
 #include <string.h>
 #include <unistd.h>
@@ -31,8 +31,8 @@
 #define IN 0x85
 #define OUT 0x07
 
-#define VID 0x04e8
-#define PID 0x681c
+#define VID 0x18d1 //0x04e8
+#define PID 0x4e22 //0x681c
 
 #define ACCESSORY_PID 0x2D01
 #define ACCESSORY_PID_ALT 0x2D00
@@ -96,9 +96,11 @@ static int mainPhase(){
 	static int transferred;
 
 	response = libusb_bulk_transfer(handle,IN,buffer,16384, &transferred,0);
+    printf("%s",  buffer);
 	if(response < 0){error(response);return -1;}
 
 	response = libusb_bulk_transfer(handle,IN,buffer,500000, &transferred,0);
+    printf("%s",  buffer);
 	if(response < 0){error(response);return -1;}
 
 
