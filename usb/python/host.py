@@ -70,10 +70,13 @@ def main():
     try:
         usb_handler = UsbHandler(vendor_id, product_id)
         accessory = AndroidAccessory(usb_handler, 'HIIT', 'DataSink', 'DataSink DESCRIPTION', '1.0', 'http://www.hiit.fi/', '0466667901')
+        print usb_handler.get_status()
     except ValueError:
         print "Normal device not found."
         try:
             usb_handler = UsbHandler(vendor_id, USB_ACCESSORY_ADB_PRODUCT_ID, True)
+            usb_handler.set_read(usb_handler.ep_in.bEndpointAddress)
+            #print usb_handler.get_status()
         except ValueError:
             print "Accessory device not found. Exiting."
             exit(1)
@@ -106,7 +109,7 @@ def main():
 
 
 class UsbHandler(object):
-    def __init__(self, vendor_id, product_id, set_conf=False):
+    def __init__(self, vendor_id, product_id, accessory=False):
         self.vendor_id = vendor_id
         self.product_id = product_id
 
@@ -120,10 +123,10 @@ class UsbHandler(object):
         except:
             pass
 
-        if set_conf and False:
-            self.set_configuration(1)
+        #if set_conf and False:
+        #    self.set_configuration(1)
 
-        self.find_endpoints()
+        self.find_endpoints(accessory)
         print "UsbHandler.__init__"
 
 
@@ -133,19 +136,55 @@ class UsbHandler(object):
         self.device.ctrl_transfer(bmRequestType, bRequest, 0, value)
 
 
-    def find_endpoints(self):
+    def set_read(self, ep):
+        bmRequestType = USB_SETUP_DEVICE_TO_HOST | USB_SETUP_TYPE_STANDARD | USB_SETUP_RECIPIENT_ENDPOINT
+        bRequest = USB_TRANSFER_TYPE_BULK
+        msg = self.device.ctrl_transfer(bmRequestType, bRequest, 0, ep)
+        return  msg
+        #return  msg[1] << 8 | msg[0];
+
+
+    def get_status(self):
+        bmRequestType = USB_SETUP_DEVICE_TO_HOST | USB_SETUP_TYPE_STANDARD | USB_SETUP_RECIPIENT_DEVICE
+        bRequest = USB_REQUEST_GET_STATUS
+        wLength = 2
+        msg = self.device.ctrl_transfer(bmRequestType, bRequest, 0, 0, wLength)  #Read 2 bytes
+
+        return  msg
+        #return  msg[1] << 8 | msg[0];
+
+
+    def find_endpoints(self, accessory=False):
         cfg = self.device.get_active_configuration()
-        intf = cfg[(0,0)]
+        interface_number = cfg[(0,0)].bInterfaceNumber
+        alternate_setting = usb.control.get_interface(self.device, interface_number)
+        intf = usb.util.find_descriptor(
+            cfg,
+            bInterfaceNumber = interface_number,
+            bAlternateSetting = alternate_setting
+        )
 
-        self.ep_in = usb.util.find_descriptor(intf,
-                                         custom_match = lambda e: \
-                                         usb.util.endpoint_direction(e.bEndpointAddress) == \
-                                         usb.util.ENDPOINT_IN)
 
-        self.ep_out = usb.util.find_descriptor(intf,
-                                          custom_match = lambda e: \
-                                          usb.util.endpoint_direction(e.bEndpointAddress) == \
-                                          usb.util.ENDPOINT_OUT)
+        """
+        if accessory:
+            intf = cfg[(0,0)]
+        else:
+            intf = cfg[(0,0)]
+
+        """
+        self.ep_in = usb.util.find_descriptor(
+                                         intf,
+                                         custom_match = \
+                                         lambda e: \
+                                            usb.util.endpoint_direction(e.bEndpointAddress) == \
+                                            usb.util.ENDPOINT_IN)
+
+        self.ep_out = usb.util.find_descriptor(
+                                         intf,
+                                         custom_match = \
+                                         lambda e: \
+                                            usb.util.endpoint_direction(e.bEndpointAddress) == \
+                                            usb.util.ENDPOINT_OUT)
 
         assert self.ep_out is not None
         assert self.ep_in is not None

@@ -3,7 +3,10 @@ package fi.hiit.isoveli.activity;
 import android.util.Log;
 import android.os.Bundle;
 import android.content.Intent;
+import android.content.IntentFilter;
+import android.app.PendingIntent;
 import android.content.Context;
+import android.content.BroadcastReceiver;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
@@ -14,6 +17,9 @@ import android.hardware.usb.UsbManager;
 import android.hardware.usb.UsbAccessory;
 import android.os.ParcelFileDescriptor;
 
+import java.lang.Runnable;
+import java.lang.Thread;
+import java.lang.InterruptedException;
 import java.io.FileDescriptor;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -31,20 +37,50 @@ import fi.hiit.isoveli.IsoVeliApplication;
 import fi.hiit.isoveli.DataController;
 
 
-public class MainActivity extends SherlockActivity
+public class MainActivity extends SherlockActivity implements Runnable
 {
+    private static final String ACTION_USB_PERMISSION =
+            "fi.hiit.isoveli.USB_PERMISSION";
     private static int counter = 0;
 
     private IsoVeliApplication app;
-    private DataController dataController;
+    //private DataController dataController;
 
-    private TextView textMessage;
+    private PendingIntent mPermissionIntent;
     private UsbManager mUsbManager;
     private UsbAccessory mUsbAccessory;
-    private ParcelFileDescriptor mPfd;
-    private FileDescriptor mFd;
-    private FileOutputStream mOs;
-    private FileInputStream mIs;
+    private ParcelFileDescriptor mFileDescriptor;
+    private FileOutputStream mOutputStream;
+    private FileInputStream mInputStream;
+
+    private final BroadcastReceiver mUsbReceiver = new BroadcastReceiver() {
+        public void onReceive(Context context, Intent intent) {
+            String action = intent.getAction();
+            if (MainActivity.ACTION_USB_PERMISSION.equals(action)) {
+                synchronized (this) {
+                    UsbAccessory accessory = (UsbAccessory) intent.getParcelableExtra(UsbManager.EXTRA_ACCESSORY);
+
+                    if (intent.getBooleanExtra(UsbManager.EXTRA_PERMISSION_GRANTED, false)) {
+                        if(accessory != null){
+                            //call method to set up accessory communication
+                            openAccessory();
+                        }
+                    }
+                    else {
+                        Log.d(IsoVeliApplication.TAG, "permission denied for accessory " + accessory);
+                    }
+                }
+            }
+            else if (UsbManager.ACTION_USB_ACCESSORY_DETACHED.equals(action)) {
+                Log.d(IsoVeliApplication.TAG, "Accessory detached detected");
+                UsbAccessory accessory = (UsbAccessory)intent.getParcelableExtra(UsbManager.EXTRA_ACCESSORY);
+                if (accessory != null) {
+                    // call your method that cleans up and closes communication with the accessory
+                    closeAccessory();
+                }
+            }
+        }
+    };
 
     /** Called when the activity is first created. */
     @Override
@@ -53,46 +89,39 @@ public class MainActivity extends SherlockActivity
         super.onCreate(savedInstanceState);
         setContentView(R.layout.main);
 
-        this.app = (IsoVeliApplication) getApplication();
-        this.dataController = new DataController();
+        this.app = (IsoVeliApplication)getApplication();
+        //this.dataController = new DataController();
+        //this.setupUi();
+        
+        mUsbManager = (UsbManager)getSystemService(Context.USB_SERVICE);
+        
+        // register the BroadcastReceiver
+        mPermissionIntent = PendingIntent.getBroadcast(this, 0, new Intent(ACTION_USB_PERMISSION), 0);
+        IntentFilter filter = new IntentFilter(ACTION_USB_PERMISSION);
+        registerReceiver(mUsbReceiver, filter);
 
-        textMessage = (TextView)findViewById(R.id.textMessage);
-        textMessage.setText(R.string.app_name);
 
-        Button buttonPing = (Button)findViewById(R.id.buttonPing);
-        buttonPing.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                Log.d(IsoVeliApplication.TAG, "Main.buttonPing clicked");
-                if (mOs != null) {
-                    try {
-                        mOs.write(("KONKER " + MainActivity.counter++ + "").getBytes());
-                    }
-                    catch (IOException ex) {
-                        Log.d(IsoVeliApplication.TAG, "IOException: " + ex);
-                    }
-                }
+        Intent intent = getIntent();
+        mUsbAccessory = (UsbAccessory)intent.getParcelableExtra(UsbManager.EXTRA_ACCESSORY);
+
+        if (mUsbAccessory == null) {
+            UsbAccessory[] accessoryList = mUsbManager.getAccessoryList();
+            if (accessoryList != null && accessoryList.length > 0) {
+                mUsbAccessory = accessoryList[0];
+
+                // request permisssion to use the accessory
+                mUsbManager.requestPermission(mUsbAccessory, mPermissionIntent);
+
             }
-        });
+        }
+        else {
+            openAccessory();
+        }
 
-        Button buttonPong = (Button)findViewById(R.id.buttonPong);
-        buttonPong.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                Log.d(IsoVeliApplication.TAG, "Main.buttonPong clicked");
-                if (mIs != null) {
-                    try {
-                        byte[] buf = new byte[128];
-                        int c = mIs.read(buf);
-                        Log.d(IsoVeliApplication.TAG, "read: (" + c + ")|" + new String(buf) + "|");
-                    }
-                    catch (IOException ex) {
-                        Log.d(IsoVeliApplication.TAG, "IOException: " + ex);
-                    }
-                }
-            }
-        });
 
+
+
+        /*
         mUsbManager = (UsbManager) getSystemService(Context.USB_SERVICE);
 
         Intent intent = getIntent();
@@ -107,14 +136,14 @@ public class MainActivity extends SherlockActivity
 
         if (mUsbAccessory != null) {
             Log.d(IsoVeliApplication.TAG, "openAccessory: " + mUsbAccessory);
-            ParcelFileDescriptor mPfd = mUsbManager.openAccessory(mUsbAccessory);
-            if (mPfd != null) {
-                FileDescriptor mFd = mPfd.getFileDescriptor();
-                mIs = new FileInputStream(mFd);
-                mOs = new FileOutputStream(mFd);
+            ParcelFileDescriptor mFileDescriptor = mUsbManager.openAccessory(mUsbAccessory);
+            if (mFileDescriptor != null) {
+                FileDescriptor fd = mFileDescriptor.getFileDescriptor();
+                mInputStream = new FileInputStream(fd);
+                mOutputStream = new FileOutputStream(fd);
 
                 try {
-                    mOs.write(("-KONKER " + MainActivity.counter++ + "").getBytes());
+                    mOutputStream.write(("-KONKER " + MainActivity.counter++ + "").getBytes());
                 }
                 catch (IOException ex) {
                     Log.d(IsoVeliApplication.TAG, "IOException: " + ex);
@@ -123,9 +152,112 @@ public class MainActivity extends SherlockActivity
                 //thread.start();
             }
         }
+        */
 
         Log.d(IsoVeliApplication.TAG, "Main.onCreate");
     }
+
+    private void closeAccessory()
+    {
+        try {
+            if (mOutputStream != null) {
+                mOutputStream.close();
+            }
+            if (mInputStream != null) {
+                mInputStream.close();
+            }
+            if (mFileDescriptor != null) {
+                mFileDescriptor.close();
+            }
+        }
+        catch(IOException ex) {
+            Log.d(IsoVeliApplication.TAG, "Error closing streams: " + ex);
+        }
+        Log.d(IsoVeliApplication.TAG, "Main.closeAccessory");
+    }
+
+    private void openAccessory()
+    {
+        mFileDescriptor = mUsbManager.openAccessory(mUsbAccessory);
+        if (mFileDescriptor != null) {
+            FileDescriptor fd = mFileDescriptor.getFileDescriptor();
+            mInputStream = new FileInputStream(fd);
+            mOutputStream = new FileOutputStream(fd);
+
+            Thread thread = new Thread(null, this, "AccessoryThread");
+            thread.start();
+        }
+        else {
+            Log.d(IsoVeliApplication.TAG, "Main.openAccessory: Failed to open accessory");
+        }
+        Log.d(IsoVeliApplication.TAG, "Main.openAccessory");
+    }
+
+    @Override
+    public void run()
+    {
+        while (true) {
+            synchronized(this) {
+                if (mOutputStream != null) {
+                    try {
+                        mOutputStream.write(("-KONKER " + MainActivity.counter++ + "").getBytes());
+                    }
+                    catch (IOException ex) {
+                        Log.d(IsoVeliApplication.TAG, "write: failed: " + ex);
+                    }
+                    Log.d(IsoVeliApplication.TAG, "write: " + MainActivity.counter);
+                }
+            }
+            try {
+                Thread.sleep(1000);
+            }
+            catch (InterruptedException ex) {
+                Log.d(IsoVeliApplication.TAG, "sleep: interrupted: " + ex);
+            }
+        }
+    }
+
+    private void setupUi()
+    {
+        Button buttonPing = (Button)findViewById(R.id.buttonPing);
+        buttonPing.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Log.d(IsoVeliApplication.TAG, "Main.buttonPing clicked");
+                /*
+                if (mOutputStream != null) {
+                    try {
+                        mOutputStream.write(("KONKER " + MainActivity.counter++ + "").getBytes());
+                    }
+                    catch (IOException ex) {
+                        Log.d(IsoVeliApplication.TAG, "IOException: " + ex);
+                    }
+                }
+                */
+            }
+        });
+
+        Button buttonPong = (Button)findViewById(R.id.buttonPong);
+        buttonPong.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Log.d(IsoVeliApplication.TAG, "Main.buttonPong clicked");
+                /*
+                if (mInputStream != null) {
+                    try {
+                        byte[] buf = new byte[128];
+                        int c = mInputStream.read(buf);
+                        Log.d(IsoVeliApplication.TAG, "read: (" + c + ")|" + new String(buf) + "|");
+                    }
+                    catch (IOException ex) {
+                        Log.d(IsoVeliApplication.TAG, "IOException: " + ex);
+                    }
+                }
+                */
+            }
+        });
+    }
+
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu)
@@ -194,20 +326,7 @@ public class MainActivity extends SherlockActivity
     protected void onDestroy()
     {
         super.onDestroy();
-        try {
-            if (mOs != null) {
-                mOs.close();
-            }
-            if (mIs != null) {
-                mIs.close();
-            }
-            if (mPfd != null) {
-                mPfd.close();
-            }
-        }
-        catch(IOException ex) {
-            Log.d(IsoVeliApplication.TAG, "Error closing streams: " + ex);
-        }
+        closeAccessory();
 
         Log.d(IsoVeliApplication.TAG, "Main.onDestroy");
     }
