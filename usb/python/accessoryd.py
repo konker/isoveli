@@ -32,6 +32,8 @@ from daemon import runner
 # NOTE: edit config.rb as appropriate
 from config import config
 
+from logger.logger import Logger
+
 # USB constants
 USB_SETUP_HOST_TO_DEVICE      = 0x00
 USB_SETUP_DEVICE_TO_HOST      = 0x80
@@ -71,17 +73,29 @@ class Accessory():
         while(True):
             try:
                 data = self.epIn.read(self.epIn.wMaxPacketSize, timeout=0)
-                data.tofile(self.fd)
+                self.logger.write_record(data)
             except usb.core.USBError as ex1:
                 # [TODO: could we try to re-connect here?]
                 logging.error("USB connection error: %s. Exiting." % ex1)
+                self.close()
                 sys.exit(100)
             except Exception as ex2:
                 # [TODO: what should happen here?]
                 #logging.debug("SLEEPING %s" % ex)
                 #time.sleep(1)
                 logging.error("Error with I/O: %s. Exiting." % ex2)
+                self.close()
                 sys.exit(101)
+
+
+    def close(self):
+        if self.logger is not None:
+            try:
+                self.logger.close()
+            except Exception as ex:
+                logging.error("Error closing logger: %s." % ex)
+
+        logging.info("Closed accessory.")
 
 
     def setup(self):
@@ -96,6 +110,7 @@ class Accessory():
                 time.sleep(1)
             except Exception as ex:
                 logging.error("Could not switch device to accessory mode: %s. Exiting." % ex)
+                self.close()
                 sys.exit(1)
         else:
             logging.error("Could not connect to device. Trying accessory...")
@@ -105,6 +120,7 @@ class Accessory():
             logging.info("Accessory connected with pid: %x." % self.accessory_pid)
         else:
             logging.error("Could not connect to accessory. Exiting.")
+            self.close()
             sys.exit(2)
 
         self.find_endpoint()
@@ -112,13 +128,16 @@ class Accessory():
             logging.info("IN  endpoint: %s" % hex(self.epIn.bEndpointAddress))
         else:
             logging.error("Could not find IN endpoint. Exiting.")
+            self.close()
             sys.exit(3)
 
         try:
-            self.fd = open(config['datafile'], 'w+')
+            self.logger = Logger(config['datafile'])
+            logging.info("Logger opened")
         except Exception as ex:
-            logging.error("Could not open data file %s for write: %s. Exiting." % (config['datafile'], ex))
-            exit(4)
+            logging.error("Could not open Logger: %s. Exiting." % ex)
+            self.close()
+            sys.exit(4)
 
         logging.info("Setup complete.")
 
@@ -215,9 +234,11 @@ if __name__ == '__main__':
         except KeyboardInterrupt:
             # [FIXME: won't exit here until receives next input?]
             logging.info("Keyboard interrupt. Exiting.")
+            accessory.close()
             sys.exit(-1)
         except Exception as ex1:
             logging.error("Error running accessory: %s. Exiting." % ex1)
+            accessory.close()
             sys.exit(-2)
     else:
         try:
@@ -229,6 +250,7 @@ if __name__ == '__main__':
             sys.exit(-1)
         except Exception as ex2:
             logging.error("Error running accessory: %s. Exiting." % ex2)
+            accessory.close()
             sys.exit(-2)
 
 
