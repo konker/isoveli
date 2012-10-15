@@ -1,0 +1,12 @@
+device:
+  vid: 0x18D1
+  pid: 0x4E22
+
+accessory:
+  manufacturer: "HIIT"
+  model: "DataSink"
+  description: "DataSink DESCRIPTION"
+  version: "1.0"
+  uri: "http://www.hiit.fi/"
+  serial: "0466667901"
+
