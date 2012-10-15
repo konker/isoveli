@@ -66,6 +66,8 @@ def main():
     try:
         data = device.read(ep_in.bEndpointAddress, 512, timeout=10000)
         print data
+        if len(data) > 0:
+            print data.tostring()
     except Exception as ex:
         print "Error reading: ", ex, " Exiting."
         exit(6)
