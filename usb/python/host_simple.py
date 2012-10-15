@@ -49,63 +49,64 @@ class Accessory():
 
 
     def run(self):
-        print "RUN"
-        print "---"
+        self.setup()
 
         # Main loop
         while(True):
             try:
-                data = self.device.read(self.ep_in.bEndpointAddress, self.ep_in.wMaxPacketSize, timeout=0)
+                data = self.ep_in.read(self.ep_in.wMaxPacketSize, timeout=0)
                 print data.tostring()
-            except Exception as ex:
+                self.ep_out.write(data.tostring()[::-1], timeout=0)
+            except usb.core.USBError as ex1:
+                # [TODO: could we try to re-connect here?]
+                print "USB connection error: %s. Exiting." % ex1
+                exit(100)
+            except Exception as ex2:
                 # [TODO: what should happen here?]
-                print "SLEEPING"
-                pass
+                #print "SLEEPING %s" % ex
+                #time.sleep(1)
+                print "Error with I/O: %s. Exiting." % ex2
+                exit(101)
 
 
     def setup(self):
         self.connect_device(config['device']['vid'], config['device']['pid'])
         if self.device is not None:
-            self.switch_device(config['accessory'])
-            time.sleep(1)
+            print "Device %x:%x connected." % \
+                (config['device']['vid'], config['device']['pid'])
+
+            try:
+                self.switch_device(config['accessory'])
+                print "Device switched to accessory mode."
+                time.sleep(1)
+            except Exception as ex:
+                print "Could not switch device to accessory mode: %s. Exiting." % ex
+                exit(1)
+        else:
+            print "Could not connect to device. Trying accessory..."
 
         self.connect_accessory()
-        if self.device is None:
-            print "Could not connect to accessory device. Exiting."
-            exit(5)
+        if self.device is not None:
+            print "Accessory connected with pid: %x." % self.accessory_pid
+        else:
+            print "Could not connect to accessory. Exiting."
+            exit(2)
 
         self.find_endpoints()
+        if self.ep_in is not None:
+            print "IN  endpoint: %s" % hex(self.ep_in.bEndpointAddress)
+        else:
+            print "Could not find IN endpoint. Exiting."
+            exit(3)
+
+        # [TODO: do we need out ep?]
+        if self.ep_out is not None:
+            print "OUT endpoint: %s" % hex(self.ep_out.bEndpointAddress)
+        else:
+            print "Could not find OUT endpoint. Exiting."
+            exit(4)
+
         print "Setup complete."
-
-
-    def find_endpoints(self):
-        cfg = self.device.get_active_configuration()
-        interface_number = cfg[(0,0)].bInterfaceNumber
-        alternate_setting = usb.control.get_interface(self.device, interface_number)
-        intf = usb.util.find_descriptor(
-            cfg,
-            bInterfaceNumber = interface_number,
-            bAlternateSetting = alternate_setting
-        )
-
-        self.ep_in = usb.util.find_descriptor(
-                             intf,
-                             custom_match = \
-                             lambda e: \
-                                usb.util.endpoint_direction(e.bEndpointAddress) == \
-                                usb.util.ENDPOINT_IN)
-
-        self.ep_out = usb.util.find_descriptor(
-                             intf,
-                             custom_match = \
-                             lambda e: \
-                                usb.util.endpoint_direction(e.bEndpointAddress) == \
-                                usb.util.ENDPOINT_OUT)
-
-        assert self.ep_out is not None
-        assert self.ep_in is not None
-        print "OUT ep: %s" % hex(self.ep_out.bEndpointAddress)
-        print "IN  ep: %s" % hex(self.ep_in.bEndpointAddress)
 
 
     def connect_device(self, vid, pid):
@@ -113,59 +114,42 @@ class Accessory():
             self.device = usb.core.find(idVendor=vid, idProduct=pid)
         except ValueError:
             self.device = None
-            print "Device %s:%s device not found." % (vid, pid)
-
-        print "Device %s:%s connected." % (vid, pid)
 
 
     def connect_accessory(self):
         try:
             self.device = usb.core.find(idVendor=USB_ACCESSORY_VENDOR_ID, idProduct=USB_ACCESSORY_ADB_PRODUCT_ID)
-            print "ADB accessory connected."
-            return
         except ValueError:
-            print "ADB accessory not found."
+            self.device = None
+
+        if self.device is not None:
+            self.accessory_pid = USB_ACCESSORY_ADB_PRODUCT_ID
+            return
 
         try:
             self.device = usb.core.find(idVendor=USB_ACCESSORY_VENDOR_ID, idProduct=USB_ACCESSORY_PRODUCT_ID)
-            print "Non-ADB accessory connected."
-            return
         except ValueError:
-            print "Non-ADB accessory not found."
             self.device = None
+
+        if self.device is not None:
+            self.accessory_pid = USB_ACCESSORY_PRODUCT_ID
+            return
 
 
     def switch_device(self, accessory_config):
-        try:
-            protocol = self.get_protocol()
+        self.protocol = self.get_protocol()
 
-            if protocol < 1:
-                raise "Protocol not supported: ", protocol
-            print "Device supports protocol: ", protocol
+        if self.protocol < 1:
+            raise "Compatable protocol not supported. Protocol: %d. " % protocol
 
-            self.send_string(ACCESSORY_STRING_MANUFACTURER,
-                        accessory_config['manufacturer'])
+        self.send_string(ACCESSORY_STRING_MANUFACTURER, accessory_config['manufacturer'])
+        self.send_string(ACCESSORY_STRING_MODEL, accessory_config['model'])
+        self.send_string(ACCESSORY_STRING_DESCRIPTION, accessory_config['description'])
+        self.send_string(ACCESSORY_STRING_VERSION, accessory_config['version'])
+        self.send_string(ACCESSORY_STRING_URI, accessory_config['uri'])
+        self.send_string(ACCESSORY_STRING_SERIAL, accessory_config['serial'])
 
-            self.send_string(ACCESSORY_STRING_MODEL,
-                        accessory_config['model'])
-
-            self.send_string(ACCESSORY_STRING_DESCRIPTION,
-                        accessory_config['description'])
-
-            self.send_string(ACCESSORY_STRING_VERSION,
-                        accessory_config['version'])
-
-            self.send_string(ACCESSORY_STRING_URI,
-                        accessory_config['uri'])
-
-            self.send_string(ACCESSORY_STRING_SERIAL,
-                                accessory_config['serial'])
-
-            self.start_accessory()
-            print "Accessory switched."
-        except Exception as ex:
-            print "Could switch device: %s. Exiting." % ex
-            exit(3)
+        self.start_accessory()
 
 
     def get_protocol(self):
@@ -187,15 +171,56 @@ class Accessory():
         bmRequestType = USB_SETUP_HOST_TO_DEVICE | USB_SETUP_TYPE_VENDOR | USB_SETUP_RECIPIENT_DEVICE
         bRequest = ACCESSORY_START
         self.device.ctrl_transfer(bmRequestType, bRequest, 0, 0)
+
+
+    def find_endpoints(self):
+        cfg = self.device.get_active_configuration()
+        interface_number = cfg[(0,0)].bInterfaceNumber
+        alternate_setting = usb.control.get_interface(self.device, interface_number)
+        intf = usb.util.find_descriptor(
+            cfg,
+            bInterfaceNumber = interface_number,
+            bAlternateSetting = alternate_setting
+        )
+
+        self.ep_in = usb.util.find_descriptor(
+                             intf,
+                             custom_match = \
+                             lambda e: \
+                                usb.util.endpoint_direction(e.bEndpointAddress) == \
+                                usb.util.ENDPOINT_IN)
+
+        # [TODO: do we need out ep?]
+        self.ep_out = usb.util.find_descriptor(
+                             intf,
+                             custom_match = \
+                             lambda e: \
+                                usb.util.endpoint_direction(e.bEndpointAddress) == \
+                                usb.util.ENDPOINT_OUT)
     
 
 if __name__ == '__main__':
+    """
+    # Non daemon version
     try:
         accessory = Accessory()
-        accessory.setup()
-        daemon_runner = daemon.runner.DaemonRunner(accessory)
+        accessory.run()
+    except KeyboardError:
+        print "Keyboard interrupt. Exiting."
+        exit(-1)
+    except Exception as ex1:
+        print "Error running accessory: %s. Exiting." % ex1
+        exit(-2)
+    """
+
+    try:
+        accessory = Accessory()
+        daemon_runner = runner.DaemonRunner(accessory)
         daemon_runner.do_action()
-    except KeyboardInterrupt:
-        print "Exiting."
-        exit()
+    except runner.DaemonRunnerStopFailureError as ex1:
+        print "Could not stop: %s." % ex1
+        exit(-1)
+    except Exception as ex2:
+        print "Error running accessory: %s. Exiting." % ex2
+        exit(-2)
 
