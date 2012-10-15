@@ -57,7 +57,6 @@ ACCESSORY_STRING_SERIAL       = 5
 ACCESSORY_GET_PROTOCOL        = 51
 ACCESSORY_SEND_STRING         = 52
 ACCESSORY_START               = 53
-ACCESSORY_STOP                = 59
 
 def main():
     """
@@ -75,7 +74,7 @@ def main():
         print "Normal device not found."
         try:
             usb_handler = UsbHandler(vendor_id, USB_ACCESSORY_ADB_PRODUCT_ID, True)
-            usb_handler.set_read(usb_handler.ep_in.bEndpointAddress)
+            #usb_handler.set_read(usb_handler.ep_in.bEndpointAddress)
             #print usb_handler.get_status()
         except ValueError:
             print "Accessory device not found. Exiting."
