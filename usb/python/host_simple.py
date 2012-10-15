@@ -28,46 +28,51 @@
 
 import usb
 import time
-from ch9 import *
 
-PHONE_VENDOR_ID               = 0x18D1
-PHONE_PRODUCT_ID              = 0x4E22
+# NOTE: edit config.rb as appropriate
+from config import config
 
-USB_ACCESSORY_VENDOR_ID       = 0x18D1
-USB_ACCESSORY_PRODUCT_ID      = 0x2D00
-USB_ACCESSORY_ADB_PRODUCT_ID  = 0x2D01
+# USB constants
+USB_SETUP_HOST_TO_DEVICE      = 0x00
+USB_SETUP_DEVICE_TO_HOST      = 0x80
+USB_SETUP_TYPE_VENDOR         = 0x40
+USB_SETUP_RECIPIENT_DEVICE    = 0x00
 
+# Android accessory mode USB constants
 ACCESSORY_STRING_MANUFACTURER = 0
 ACCESSORY_STRING_MODEL        = 1
 ACCESSORY_STRING_DESCRIPTION  = 2
 ACCESSORY_STRING_VERSION      = 3
 ACCESSORY_STRING_URI          = 4
 ACCESSORY_STRING_SERIAL       = 5
-
 ACCESSORY_GET_PROTOCOL        = 51
 ACCESSORY_SEND_STRING         = 52
 ACCESSORY_START               = 53
 
-device = None
+# Android accessory id constants
+USB_ACCESSORY_VENDOR_ID       = 0x18D1
+USB_ACCESSORY_PRODUCT_ID      = 0x2D00
+USB_ACCESSORY_ADB_PRODUCT_ID  = 0x2D01
+
 
 def main():
-    device = connect_phone()
+    device = connect_device(config['device']['vid'], config['device']['pid'])
 
     if device is not None:
-        switch_device(device, 'HIIT', 'DataSink', 'DataSink DESCRIPTION', '1.0', 'http://www.hiit.fi/', '0466667901')
+        switch_device(device, config['accessory'])
         time.sleep(1)
 
     device = connect_accessory()
     if device is None:
-        print "Accessory device is None. Exiting."
+        print "Could not connect to accessory device. Exiting."
         exit(5)
 
     ep_in, ep_out = find_endpoints(device)
     try:
         data = device.read(ep_in.bEndpointAddress, 512, timeout=10000)
-        print data
+        print data.tostring()
     except Exception as ex:
-        print "Error reading: ", ex, " Exiting."
+        print "Error reading: %s. Exiting." % ex
         exit(6)
 
 
@@ -97,62 +102,70 @@ def find_endpoints(device):
 
     assert ep_out is not None
     assert ep_in is not None
-    print "OUT ep addr is ", hex(ep_out.bEndpointAddress)
-    print "IN  ep addr is ", hex(ep_in.bEndpointAddress)
+    print "OUT ep: %s" % hex(ep_out.bEndpointAddress)
+    print "IN  ep: %s" % hex(ep_in.bEndpointAddress)
 
     return ep_in, ep_out
 
 
-def connect_phone():
+def connect_device(vid, pid):
     try:
-        device = usb.core.find(idVendor=PHONE_VENDOR_ID, idProduct=PHONE_PRODUCT_ID)
+        device = usb.core.find(idVendor=vid, idProduct=pid)
     except ValueError:
-        print "Phone device not found."
+        print "Device %s:%s device not found." % (vid, pid)
 
-    print "Phone connected"
+    print "Device %s:%s connected." % (vid, pid)
     return device
 
 
 def connect_accessory():
     try:
         device = usb.core.find(idVendor=USB_ACCESSORY_VENDOR_ID, idProduct=USB_ACCESSORY_ADB_PRODUCT_ID)
-        print "ADB accessory connected"
+        print "ADB accessory connected."
         return device
     except ValueError:
         print "ADB accessory not found."
 
     try:
         device = usb.core.find(idVendor=USB_ACCESSORY_VENDOR_ID, idProduct=USB_ACCESSORY_PRODUCT_ID)
-        print "Non-ADB accessory connected"
+        print "Non-ADB accessory connected."
         return device
     except ValueError:
         print "Non-ADB accessory not found. Exiting."
         exit(4)
 
 
-def switch_device(device, manufacturer, model, description, version, uri, serial):
+def switch_device(device, accessory_config):
     try:
         protocol = get_protocol(device)
 
         if protocol < 1:
             raise "Protocol not supported: ", protocol
-        
         print "Device supports protocol: ", protocol
-        time.sleep(1)
 
-        send_string(device, ACCESSORY_STRING_MANUFACTURER, manufacturer)
-        send_string(device, ACCESSORY_STRING_MODEL, model)
-        send_string(device, ACCESSORY_STRING_DESCRIPTION, description)
-        send_string(device, ACCESSORY_STRING_VERSION, version)
-        send_string(device, ACCESSORY_STRING_URI, uri)
-        send_string(device, ACCESSORY_STRING_SERIAL, serial)
+        send_string(device, ACCESSORY_STRING_MANUFACTURER,
+                            accessory_config['manufacturer'])
+
+        send_string(device, ACCESSORY_STRING_MODEL,
+                            accessory_config['model'])
+
+        send_string(device, ACCESSORY_STRING_DESCRIPTION,
+                            accessory_config['description'])
+
+        send_string(device, ACCESSORY_STRING_VERSION,
+                            accessory_config['version'])
+
+        send_string(device, ACCESSORY_STRING_URI,
+                            accessory_config['uri'])
+
+        send_string(device, ACCESSORY_STRING_SERIAL,
+                            accessory_config['serial'])
 
         start_accessory(device)
+        print "Accessory switched."
     except Exception as ex:
-        print "Could switch device: ", ex, " Exiting."
+        print "Could switch device: %s. Exiting." % ex
         exit(3)
-
-    print "Accessory started"
 
 
 def get_protocol(device):
