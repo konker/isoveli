@@ -1,13 +1,11 @@
 #!/usr/bin/env python
 #
-# host_simple.py
+# accessoryd.py
 #
 # Copyright 2012 Konrad Markus
 #
 # Author: Konrad Markus <konker@gmail.com>
 #
-
-# [TODO: change name from host_simple ]
 
 import usb
 import time
@@ -44,7 +42,7 @@ class Accessory():
         self.stdin_path = '/dev/null'
         self.stdout_path = '/dev/tty'
         self.stderr_path = '/dev/tty'
-        self.pidfile_path =  '/tmp/foo.pid'
+        self.pidfile_path =  'accessoryd.pid'
         self.pidfile_timeout = 5
 
 
@@ -54,9 +52,8 @@ class Accessory():
         # Main loop
         while(True):
             try:
-                data = self.ep_in.read(self.ep_in.wMaxPacketSize, timeout=0)
+                data = self.epIn.read(self.epIn.wMaxPacketSize, timeout=0)
                 print data.tostring()
-                self.ep_out.write(data.tostring()[::-1], timeout=0)
             except usb.core.USBError as ex1:
                 # [TODO: could we try to re-connect here?]
                 print "USB connection error: %s. Exiting." % ex1
@@ -92,19 +89,12 @@ class Accessory():
             print "Could not connect to accessory. Exiting."
             exit(2)
 
-        self.find_endpoints()
-        if self.ep_in is not None:
-            print "IN  endpoint: %s" % hex(self.ep_in.bEndpointAddress)
+        self.find_endpoint()
+        if self.epIn is not None:
+            print "IN  endpoint: %s" % hex(self.epIn.bEndpointAddress)
         else:
             print "Could not find IN endpoint. Exiting."
             exit(3)
-
-        # [TODO: do we need out ep?]
-        if self.ep_out is not None:
-            print "OUT endpoint: %s" % hex(self.ep_out.bEndpointAddress)
-        else:
-            print "Could not find OUT endpoint. Exiting."
-            exit(4)
 
         print "Setup complete."
 
@@ -173,39 +163,25 @@ class Accessory():
         self.device.ctrl_transfer(bmRequestType, bRequest, 0, 0)
 
 
-    def find_endpoints(self):
-        cfg = self.device.get_active_configuration()
-        interface_number = cfg[(0,0)].bInterfaceNumber
-        alternate_setting = usb.control.get_interface(self.device, interface_number)
-        intf = usb.util.find_descriptor(
-            cfg,
-            bInterfaceNumber = interface_number,
-            bAlternateSetting = alternate_setting
-        )
+    def find_endpoint(self):
+        configuration = self.device.get_active_configuration()
+        interface = configuration[(0,0)]
 
-        self.ep_in = usb.util.find_descriptor(
-                             intf,
-                             custom_match = \
-                             lambda e: \
-                                usb.util.endpoint_direction(e.bEndpointAddress) == \
-                                usb.util.ENDPOINT_IN)
+        self.epIn = usb.util.find_descriptor(
+            interface,
+            custom_match = \
+            lambda e: \
+               usb.util.endpoint_direction(e.bEndpointAddress) == \
+               usb.util.ENDPOINT_IN)
 
-        # [TODO: do we need out ep?]
-        self.ep_out = usb.util.find_descriptor(
-                             intf,
-                             custom_match = \
-                             lambda e: \
-                                usb.util.endpoint_direction(e.bEndpointAddress) == \
-                                usb.util.ENDPOINT_OUT)
-    
 
 if __name__ == '__main__':
-    """
     # Non daemon version
     try:
         accessory = Accessory()
         accessory.run()
-    except KeyboardError:
+    except KeyboardInterrupt:
+        # [FIXME: won't exit here until receives next input?]
         print "Keyboard interrupt. Exiting."
         exit(-1)
     except Exception as ex1:
@@ -223,4 +199,5 @@ if __name__ == '__main__':
     except Exception as ex2:
         print "Error running accessory: %s. Exiting." % ex2
         exit(-2)
+    """
 
