@@ -22,3 +22,6 @@ local.properties
 _scrap
 
 *.pyc
+
+usb/python/data/*.dat
+usb/python/*.log

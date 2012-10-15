@@ -10,7 +10,10 @@
 
 """
 TODO:
-    - logging
+    - separate config file?
+        - json doesn't allow hex literals?
+        - yaml?
+            - requires another dependency
     - data format
         - data channels?
     - data persistence/streaming
@@ -57,7 +60,7 @@ class Accessory():
         self.stdin_path = '/dev/null'
         self.stdout_path = '/dev/tty'
         self.stderr_path = '/dev/tty'
-        self.pidfile_path =  'accessoryd.pid'
+        self.pidfile_path =  config['pidfile']
         self.pidfile_timeout = 5
 
 
@@ -68,17 +71,17 @@ class Accessory():
         while(True):
             try:
                 data = self.epIn.read(self.epIn.wMaxPacketSize, timeout=0)
-                print data.tostring()
+                data.tofile(self.fd)
             except usb.core.USBError as ex1:
                 # [TODO: could we try to re-connect here?]
                 logging.error("USB connection error: %s. Exiting." % ex1)
-                exit(100)
+                sys.exit(100)
             except Exception as ex2:
                 # [TODO: what should happen here?]
                 #logging.debug("SLEEPING %s" % ex)
                 #time.sleep(1)
                 logging.error("Error with I/O: %s. Exiting." % ex2)
-                exit(101)
+                sys.exit(101)
 
 
     def setup(self):
@@ -93,7 +96,7 @@ class Accessory():
                 time.sleep(1)
             except Exception as ex:
                 logging.error("Could not switch device to accessory mode: %s. Exiting." % ex)
-                exit(1)
+                sys.exit(1)
         else:
             logging.error("Could not connect to device. Trying accessory...")
 
@@ -102,14 +105,20 @@ class Accessory():
             logging.info("Accessory connected with pid: %x." % self.accessory_pid)
         else:
             logging.error("Could not connect to accessory. Exiting.")
-            exit(2)
+            sys.exit(2)
 
         self.find_endpoint()
         if self.epIn is not None:
             logging.info("IN  endpoint: %s" % hex(self.epIn.bEndpointAddress))
         else:
             logging.error("Could not find IN endpoint. Exiting.")
-            exit(3)
+            sys.exit(3)
+
+        try:
+            self.fd = open(config['datafile'], 'w+')
+        except Exception as ex:
+            logging.error("Could not open data file %s for write: %s. Exiting." % (config['datafile'], ex))
+            exit(4)
 
         logging.info("Setup complete.")
 
@@ -193,34 +202,33 @@ class Accessory():
 if __name__ == '__main__':
 
     # configure logging
-    logfile = os.path.realpath(os.path.join(os.path.dirname(__file__), 'accessoryd.log'))
     logging.basicConfig(level=logging.DEBUG,
-                        filename=logfile,
+                        filename=config['logfile'],
                         format='%(asctime)s [%(threadName)s] %(message)s',
                         datefmt='%Y-%m-%d %H:%M:%S')
 
-    # Non daemon version
-    try:
-        accessory = Accessory()
-        accessory.run()
-    except KeyboardInterrupt:
-        # [FIXME: won't exit here until receives next input?]
-        logging.info("Keyboard interrupt. Exiting.")
-        exit(-1)
-    except Exception as ex1:
-        loggin.error("Error running accessory: %s. Exiting." % ex1)
-        exit(-2)
-    """
+    if sys.argv[1] == 'run':
+        # Non daemon version
+        try:
+            accessory = Accessory()
+            accessory.run()
+        except KeyboardInterrupt:
+            # [FIXME: won't exit here until receives next input?]
+            logging.info("Keyboard interrupt. Exiting.")
+            sys.exit(-1)
+        except Exception as ex1:
+            logging.error("Error running accessory: %s. Exiting." % ex1)
+            sys.exit(-2)
+    else:
+        try:
+            accessory = Accessory()
+            daemon_runner = runner.DaemonRunner(accessory)
+            daemon_runner.do_action()
+        except runner.DaemonRunnerStopFailureError as ex1:
+            logging.error("Could not stop: %s." % ex1)
+            sys.exit(-1)
+        except Exception as ex2:
+            logging.error("Error running accessory: %s. Exiting." % ex2)
+            sys.exit(-2)
 
-    try:
-        accessory = Accessory()
-        daemon_runner = runner.DaemonRunner(accessory)
-        daemon_runner.do_action()
-    except runner.DaemonRunnerStopFailureError as ex1:
-        logging.error("Could not stop: %s." % ex1)
-        exit(-1)
-    except Exception as ex2:
-        logging.error("Error running accessory: %s. Exiting." % ex2)
-        exit(-2)
-    """
 
