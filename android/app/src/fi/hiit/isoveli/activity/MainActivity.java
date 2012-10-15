@@ -91,7 +91,7 @@ public class MainActivity extends SherlockActivity implements Runnable
 
         this.app = (IsoVeliApplication)getApplication();
         //this.dataController = new DataController();
-        //this.setupUi();
+        this.setupUi();
         
         mUsbManager = (UsbManager)getSystemService(Context.USB_SERVICE);
         
