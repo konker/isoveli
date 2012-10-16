@@ -1,4 +1,4 @@
-package fi.hiit.isoveli;
+package fi.hiit.meerkat;
 
 import android.util.Log;
 import android.app.Application;
@@ -7,10 +7,10 @@ import android.content.SharedPreferences;
 import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
 import android.preference.PreferenceManager;
 
-public class IsoVeliApplication extends Application implements OnSharedPreferenceChangeListener
+public class MeerkatApplication extends Application implements OnSharedPreferenceChangeListener
 {
-    public static final String TAG = "ISOVELI";
-    public static final String ERROR_TAG = "ISOVELI:ERROR";
+    public static final String TAG = "MEERKAT";
+    public static final String ERROR_TAG = "MEERKAT:ERROR";
 
     private SharedPreferences prefs;
     private SharedPreferences.Editor editor;
@@ -23,14 +23,14 @@ public class IsoVeliApplication extends Application implements OnSharedPreferenc
         this.editor = prefs.edit();
         this.prefs.registerOnSharedPreferenceChangeListener(this);
 
-        Log.d(IsoVeliApplication.TAG, "App.onCreate");
+        Log.d(MeerkatApplication.TAG, "App.onCreate");
     }
 
     @Override
     public void onTerminate() {
         super.onTerminate();
 
-        Log.i(IsoVeliApplication.TAG, "App.onTerminate");
+        Log.i(MeerkatApplication.TAG, "App.onTerminate");
     }
 
     public SharedPreferences getPrefs() {
@@ -43,7 +43,7 @@ public class IsoVeliApplication extends Application implements OnSharedPreferenc
     /* methods required by OnSharedPreferenceChangeListener */
     public synchronized void onSharedPreferenceChanged(SharedPreferences prefs, String key) {
         //[TODO]
-        Log.i(IsoVeliApplication.TAG, "App.onSharedPreferenceChanged");
+        Log.i(MeerkatApplication.TAG, "App.onSharedPreferenceChanged");
         return;
     }
 }

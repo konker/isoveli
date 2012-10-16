@@ -1,7 +1,7 @@
-package fi.hiit.isoveli.datasink;
+package fi.hiit.meerkat.datasink;
 
 import android.util.Log;
-import fi.hiit.isoveli.DataController;
+import fi.hiit.meerkat.DataController;
 
 /**
  */
@@ -14,7 +14,7 @@ public class LogDataSink extends AbstractDataSink
 
     public void write()
     {
-        Log.i("IsoVeli", "LogDataSink.write");
+        Log.i("meerkat", "LogDataSink.write");
     }
 }
 

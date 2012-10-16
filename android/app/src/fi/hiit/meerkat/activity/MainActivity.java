@@ -1,4 +1,4 @@
-package fi.hiit.isoveli.activity;
+package fi.hiit.meerkat.activity;
 
 import android.util.Log;
 import android.os.Bundle;
@@ -32,18 +32,18 @@ import com.actionbarsherlock.view.MenuItem;
 import com.actionbarsherlock.view.MenuInflater;
 import com.actionbarsherlock.app.SherlockActivity;
 
-import fi.hiit.isoveli.R;
-import fi.hiit.isoveli.IsoVeliApplication;
-import fi.hiit.isoveli.DataController;
+import fi.hiit.meerkat.R;
+import fi.hiit.meerkat.MeerkatApplication;
+import fi.hiit.meerkat.DataController;
 
 
 public class MainActivity extends SherlockActivity implements Runnable
 {
     private static final String ACTION_USB_PERMISSION =
-            "fi.hiit.isoveli.USB_PERMISSION";
+            "fi.hiit.meerkat.USB_PERMISSION";
     private static int counter = 0;
 
-    private IsoVeliApplication app;
+    private MeerkatApplication app;
     //private DataController dataController;
 
     private PendingIntent mPermissionIntent;
@@ -67,12 +67,12 @@ public class MainActivity extends SherlockActivity implements Runnable
                         }
                     }
                     else {
-                        Log.d(IsoVeliApplication.TAG, "permission denied for accessory " + accessory);
+                        Log.d(MeerkatApplication.TAG, "permission denied for accessory " + accessory);
                     }
                 }
             }
             else if (UsbManager.ACTION_USB_ACCESSORY_DETACHED.equals(action)) {
-                Log.d(IsoVeliApplication.TAG, "Accessory detached detected");
+                Log.d(MeerkatApplication.TAG, "Accessory detached detected");
                 UsbAccessory accessory = (UsbAccessory)intent.getParcelableExtra(UsbManager.EXTRA_ACCESSORY);
                 if (accessory != null) {
                     // call your method that cleans up and closes communication with the accessory
@@ -89,7 +89,7 @@ public class MainActivity extends SherlockActivity implements Runnable
         super.onCreate(savedInstanceState);
         setContentView(R.layout.main);
 
-        this.app = (IsoVeliApplication)getApplication();
+        this.app = (MeerkatApplication)getApplication();
         //this.dataController = new DataController();
         this.setupUi();
         
@@ -135,7 +135,7 @@ public class MainActivity extends SherlockActivity implements Runnable
         }
 
         if (mUsbAccessory != null) {
-            Log.d(IsoVeliApplication.TAG, "openAccessory: " + mUsbAccessory);
+            Log.d(MeerkatApplication.TAG, "openAccessory: " + mUsbAccessory);
             ParcelFileDescriptor mFileDescriptor = mUsbManager.openAccessory(mUsbAccessory);
             if (mFileDescriptor != null) {
                 FileDescriptor fd = mFileDescriptor.getFileDescriptor();
@@ -146,7 +146,7 @@ public class MainActivity extends SherlockActivity implements Runnable
                     mOutputStream.write(("-KONKER " + MainActivity.counter++ + "").getBytes());
                 }
                 catch (IOException ex) {
-                    Log.d(IsoVeliApplication.TAG, "IOException: " + ex);
+                    Log.d(MeerkatApplication.TAG, "IOException: " + ex);
                 }
                 //Thread thread = new Thread(null, this, "AccessoryThread");
                 //thread.start();
@@ -154,7 +154,7 @@ public class MainActivity extends SherlockActivity implements Runnable
         }
         */
 
-        Log.d(IsoVeliApplication.TAG, "Main.onCreate");
+        Log.d(MeerkatApplication.TAG, "Main.onCreate");
     }
 
     private void closeAccessory()
@@ -171,9 +171,9 @@ public class MainActivity extends SherlockActivity implements Runnable
             }
         }
         catch(IOException ex) {
-            Log.d(IsoVeliApplication.TAG, "Error closing streams: " + ex);
+            Log.d(MeerkatApplication.TAG, "Error closing streams: " + ex);
         }
-        Log.d(IsoVeliApplication.TAG, "Main.closeAccessory");
+        Log.d(MeerkatApplication.TAG, "Main.closeAccessory");
     }
 
     private void openAccessory()
@@ -188,9 +188,9 @@ public class MainActivity extends SherlockActivity implements Runnable
             //thread.start();
         }
         else {
-            Log.d(IsoVeliApplication.TAG, "Main.openAccessory: Failed to open accessory");
+            Log.d(MeerkatApplication.TAG, "Main.openAccessory: Failed to open accessory");
         }
-        Log.d(IsoVeliApplication.TAG, "Main.openAccessory");
+        Log.d(MeerkatApplication.TAG, "Main.openAccessory");
     }
 
     @Override
@@ -203,16 +203,16 @@ public class MainActivity extends SherlockActivity implements Runnable
                         mOutputStream.write(("-KONKER " + MainActivity.counter++ + "").getBytes());
                     }
                     catch (IOException ex) {
-                        Log.d(IsoVeliApplication.TAG, "write: failed: " + ex);
+                        Log.d(MeerkatApplication.TAG, "write: failed: " + ex);
                     }
-                    Log.d(IsoVeliApplication.TAG, "write: " + MainActivity.counter);
+                    Log.d(MeerkatApplication.TAG, "write: " + MainActivity.counter);
                 }
             }
             try {
                 Thread.sleep(1000);
             }
             catch (InterruptedException ex) {
-                Log.d(IsoVeliApplication.TAG, "sleep: interrupted: " + ex);
+                Log.d(MeerkatApplication.TAG, "sleep: interrupted: " + ex);
             }
         }
     }
@@ -223,13 +223,13 @@ public class MainActivity extends SherlockActivity implements Runnable
         buttonPing.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Log.d(IsoVeliApplication.TAG, "Main.buttonPing clicked");
+                Log.d(MeerkatApplication.TAG, "Main.buttonPing clicked");
                 if (mOutputStream != null) {
                     try {
                         mOutputStream.write(("KONKER " + MainActivity.counter++ + "").getBytes());
                     }
                     catch (IOException ex) {
-                        Log.d(IsoVeliApplication.TAG, "IOException: " + ex);
+                        Log.d(MeerkatApplication.TAG, "IOException: " + ex);
                     }
                 }
             }
@@ -239,15 +239,15 @@ public class MainActivity extends SherlockActivity implements Runnable
         buttonPong.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Log.d(IsoVeliApplication.TAG, "Main.buttonPong clicked");
+                Log.d(MeerkatApplication.TAG, "Main.buttonPong clicked");
                 if (mInputStream != null) {
                     try {
                         byte[] buf = new byte[128];
                         int c = mInputStream.read(buf);
-                        Log.d(IsoVeliApplication.TAG, "read: (" + c + ")|" + new String(buf) + "|");
+                        Log.d(MeerkatApplication.TAG, "read: (" + c + ")|" + new String(buf) + "|");
                     }
                     catch (IOException ex) {
-                        Log.d(IsoVeliApplication.TAG, "IOException: " + ex);
+                        Log.d(MeerkatApplication.TAG, "IOException: " + ex);
                     }
                 }
             }
@@ -287,35 +287,35 @@ public class MainActivity extends SherlockActivity implements Runnable
     protected void onPause()
     {
         super.onPause();
-        Log.d(IsoVeliApplication.TAG, "Main.onPause");
+        Log.d(MeerkatApplication.TAG, "Main.onPause");
     }
 
     @Override
     protected void onResume()
     {
         super.onResume();
-        Log.d(IsoVeliApplication.TAG, "Main.onResume");
+        Log.d(MeerkatApplication.TAG, "Main.onResume");
     }
 
     @Override
     protected void onStart()
     {
         super.onStart();
-        Log.d(IsoVeliApplication.TAG, "Main.onStart");
+        Log.d(MeerkatApplication.TAG, "Main.onStart");
     }
 
     @Override
     protected void onRestart()
     {
         super.onRestart();
-        Log.d(IsoVeliApplication.TAG, "Main.onRestart");
+        Log.d(MeerkatApplication.TAG, "Main.onRestart");
     }
 
     @Override
     protected void onStop()
     {
         super.onStop();
-        Log.d(IsoVeliApplication.TAG, "Main.onStop");
+        Log.d(MeerkatApplication.TAG, "Main.onStop");
     }
 
     @Override
@@ -324,7 +324,7 @@ public class MainActivity extends SherlockActivity implements Runnable
         super.onDestroy();
         closeAccessory();
 
-        Log.d(IsoVeliApplication.TAG, "Main.onDestroy");
+        Log.d(MeerkatApplication.TAG, "Main.onDestroy");
     }
 }
 

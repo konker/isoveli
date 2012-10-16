@@ -1,4 +1,4 @@
-package fi.hiit.isoveli;
+package fi.hiit.meerkat;
 
 /**
  */
@@ -6,8 +6,8 @@ package fi.hiit.isoveli;
 import java.util.HashMap;
 import android.util.Log;
 
-import fi.hiit.isoveli.datasource.*;
-import fi.hiit.isoveli.datasink.*;
+import fi.hiit.meerkat.datasource.*;
+import fi.hiit.meerkat.datasink.*;
 
 public class DataController
 {
@@ -44,7 +44,7 @@ public class DataController
     public void startSources()
     {
         for (String s : sources.keySet()) { 
-            Log.i("IsoVeli", "Starting source: " + s);
+            Log.i("meerkat", "Starting source: " + s);
             sources.get(s).start();
         }
     }

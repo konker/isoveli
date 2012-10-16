@@ -1,6 +1,6 @@
-package fi.hiit.isoveli.datasource;
+package fi.hiit.meerkat.datasource;
 
-import fi.hiit.isoveli.DataController;
+import fi.hiit.meerkat.DataController;
 
 /**
  */

@@ -1,8 +1,8 @@
-package fi.hiit.isoveli.datasource;
+package fi.hiit.meerkat.datasource;
 
 import android.util.Log;
 import android.hardware.Camera;
-import fi.hiit.isoveli.DataController;
+import fi.hiit.meerkat.DataController;
 
 /**
  */
@@ -15,20 +15,20 @@ public class CameraDataSource extends AbstractDataSource
 
     public void start()
     {
-        Log.i("IsoVeli", "CameraDataSource.start");
+        Log.i("meerkat", "CameraDataSource.start");
         Camera camera = getCameraInstance();
         if (camera == null) {
-            Log.i("IsoVeli", "Camera could not be opened");
+            Log.i("meerkat", "Camera could not be opened");
             /*[TODO: handle camera error]*/
         }
-        Log.i("IsoVeli", "Camera opened: " + camera);
+        Log.i("meerkat", "Camera opened: " + camera);
 
 
     }
 
     public void stop()
     {
-        Log.i("IsoVeli", "CameraDataSource.stop");
+        Log.i("meerkat", "CameraDataSource.stop");
     }
 
     /** A safe way to get an instance of the Camera object. */
