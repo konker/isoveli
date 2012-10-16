@@ -1,17 +1,21 @@
 package fi.hiit.meerkat.datasource;
 
-import fi.hiit.meerkat.DataController;
+import java.lang.Runnable;
+import fi.hiit.meerkat.MeerkatApplication;
+
 
 /**
  */
-public abstract class AbstractDataSource
+public abstract class AbstractDataSource implements Runnable
 {
-    protected DataController dataController;
+    protected MeerkatApplication app;
 
-    public AbstractDataSource(DataController dataController)
+    public AbstractDataSource(MeerkatApplication app)
     {
-        this.dataController = dataController;
+        this.app = app;
     }
-    public abstract void start();
     public abstract void stop();
+
+    public abstract String getLabel();
+    public abstract String getDescription();
 }
