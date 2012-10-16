@@ -24,4 +24,5 @@ _scrap
 *.pyc
 
 usb/python/data/*.dat
+usb/python/data/*.db
 usb/python/*.log

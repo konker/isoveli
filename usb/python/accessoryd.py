@@ -32,7 +32,7 @@ from daemon import runner
 # NOTE: edit config.rb as appropriate
 from config import config
 
-from logger.logger import Logger
+from storage.sqlite import Storage
 
 # USB constants
 USB_SETUP_HOST_TO_DEVICE      = 0x00
@@ -65,6 +65,12 @@ class Accessory():
         self.pidfile_path =  config['pidfile']
         self.pidfile_timeout = 5
 
+        self.storage = None
+        self.device = None
+        self.epIn = None
+        self.accessory_pid = None
+        self.protocol = None
+
 
     def run(self):
         self.setup()
@@ -73,27 +79,28 @@ class Accessory():
         while(True):
             try:
                 data = self.epIn.read(self.epIn.wMaxPacketSize, timeout=0)
-                self.logger.write_record(data)
+                channel_id = data.pop(0)
+                self.storage.write_array(channel_id, data)
             except usb.core.USBError as ex1:
                 # [TODO: could we try to re-connect here?]
                 logging.error("USB connection error: %s. Exiting." % ex1)
                 self.close()
                 sys.exit(100)
-            except Exception as ex2:
+            #except Exception as ex2:
                 # [TODO: what should happen here?]
                 #logging.debug("SLEEPING %s" % ex)
                 #time.sleep(1)
-                logging.error("Error with I/O: %s. Exiting." % ex2)
-                self.close()
-                sys.exit(101)
+            #    logging.error("Error with I/O: %s. Exiting." % ex2)
+            #    self.close()
+            #    sys.exit(101)
 
 
     def close(self):
-        if self.logger is not None:
+        if self.storage is not None:
             try:
-                self.logger.close()
+                self.storage.close()
             except Exception as ex:
-                logging.error("Error closing logger: %s." % ex)
+                logging.error("Error closing storage: %s." % ex)
 
         logging.info("Closed accessory.")
 
@@ -125,17 +132,17 @@ class Accessory():
 
         self.find_endpoint()
         if self.epIn is not None:
-            logging.info("IN  endpoint: %s" % hex(self.epIn.bEndpointAddress))
+            logging.info("IN endpoint: %s" % hex(self.epIn.bEndpointAddress))
         else:
             logging.error("Could not find IN endpoint. Exiting.")
             self.close()
             sys.exit(3)
 
         try:
-            self.logger = Logger(config['datafile'])
-            logging.info("Logger opened")
+            self.storage = Storage(config['datafile'])
+            logging.info("Storage opened")
         except Exception as ex:
-            logging.error("Could not open Logger: %s. Exiting." % ex)
+            logging.error("Could not open Storage: %s. Exiting." % ex)
             self.close()
             sys.exit(4)
 
@@ -226,7 +233,7 @@ if __name__ == '__main__':
                         format='%(asctime)s [%(threadName)s] %(message)s',
                         datefmt='%Y-%m-%d %H:%M:%S')
 
-    if sys.argv[1] == 'run':
+    if len(sys.argv) == 1 or sys.argv[1] == 'run':
         # Non daemon version
         try:
             accessory = Accessory()
@@ -236,10 +243,10 @@ if __name__ == '__main__':
             logging.info("Keyboard interrupt. Exiting.")
             accessory.close()
             sys.exit(-1)
-        except Exception as ex1:
-            logging.error("Error running accessory: %s. Exiting." % ex1)
-            accessory.close()
-            sys.exit(-2)
+        #except Exception as ex1:
+        #    logging.error("Error running accessory: %s. Exiting." % ex1)
+        #    accessory.close()
+        #    sys.exit(-2)
     else:
         try:
             accessory = Accessory()
@@ -248,9 +255,9 @@ if __name__ == '__main__':
         except runner.DaemonRunnerStopFailureError as ex1:
             logging.error("Could not stop: %s." % ex1)
             sys.exit(-1)
-        except Exception as ex2:
-            logging.error("Error running accessory: %s. Exiting." % ex2)
-            accessory.close()
-            sys.exit(-2)
+        #except Exception as ex2:
+        #    logging.error("Error running accessory: %s. Exiting." % ex2)
+        #    accessory.close()
+        #    sys.exit(-2)
 
 

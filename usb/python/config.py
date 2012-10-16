@@ -3,7 +3,7 @@ import os
 config = {
     "pidfile": os.path.realpath(os.path.join(os.path.dirname(__file__), 'accessoryd.pid')),
     "logfile": os.path.realpath(os.path.join(os.path.dirname(__file__), 'accessoryd.log')),
-    "datafile": os.path.realpath(os.path.join(os.path.dirname(__file__), 'data', 'accessoryd.dat')),
+    "datafile": os.path.realpath(os.path.join(os.path.dirname(__file__), 'data', 'accessoryd.db')),
 
     "device": {
         "vid": 0x18D1,
