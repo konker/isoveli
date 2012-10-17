@@ -1,20 +1,22 @@
 package fi.hiit.meerkat.datasink;
 
 import android.util.Log;
-import fi.hiit.meerkat.DataController;
+import fi.hiit.meerkat.MeerkatApplication;
 
 /**
  */
-public class LogDataSink extends AbstractDataSink
+public class LogDataSink implements IDataSink
 {
-    public LogDataSink(DataController dataController)
+    @Override
+    public boolean isActive()
     {
-        super(dataController);
+        return false;
     }
 
-    public void write()
+    @Override
+    public void write(byte channelId, byte[] data)
     {
-        Log.i("meerkat", "LogDataSink.write");
+        Log.i(MeerkatApplication.TAG, "LogDataSink.write");
     }
 }
 

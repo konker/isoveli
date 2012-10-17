@@ -1,5 +1,6 @@
 package fi.hiit.meerkat.service;
 
+import java.util.HashMap;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.FileDescriptor;
@@ -21,7 +22,8 @@ import android.os.IBinder;
 import fi.hiit.meerkat.R;
 import fi.hiit.meerkat.MeerkatApplication;
 import fi.hiit.meerkat.activity.MainActivity;
-import fi.hiit.meerkat.DataController;
+import fi.hiit.meerkat.datasink.*;
+import fi.hiit.meerkat.datasource.*;
 
 /**
   */
@@ -31,12 +33,15 @@ public class MeerkatService extends Service
     private static final String ACTION_USB_PERMISSION =
             "fi.hiit.meerkat.USB_PERMISSION";
 
-    private MeerkatApplication app;
+    private MeerkatApplication mApplication;
     private PendingIntent mPermissionIntent;
     private UsbManager mUsbManager;
     private UsbAccessory mUsbAccessory;
     private ParcelFileDescriptor mFileDescriptor;
     private FileOutputStream mOutputStream;
+    private boolean mPermissionGranted;
+    private IDataSink mSink;
+    //protected HashMap<String, IDataSource> sources;
 
     private final BroadcastReceiver mUsbReceiver = new BroadcastReceiver() {
         public void onReceive(Context context, Intent intent) {
@@ -48,7 +53,10 @@ public class MeerkatService extends Service
                     if (intent.getBooleanExtra(UsbManager.EXTRA_PERMISSION_GRANTED, false)) {
                         if(accessory != null){
                             // set up accessory communication
-                            openAccessory();
+                            mPermissionGranted = true;
+                            //openAccessory();
+                            initSink();
+                            initSources();
                         }
                     }
                     else {
@@ -61,7 +69,7 @@ public class MeerkatService extends Service
                 UsbAccessory accessory = (UsbAccessory)intent.getParcelableExtra(UsbManager.EXTRA_ACCESSORY);
                 if (accessory != null) {
                     // clean up and close communication with the accessory
-                    closeAccessory();
+                    //closeAccessory();
                 }
             }
         }
@@ -71,7 +79,8 @@ public class MeerkatService extends Service
     public void onCreate()
     {
         super.onCreate();
-        this.app = (MeerkatApplication)getApplication();
+        this.mApplication = (MeerkatApplication)getApplication();
+
         mUsbManager = (UsbManager)getSystemService(Context.USB_SERVICE);
         
         // register the BroadcastReceiver
@@ -84,6 +93,7 @@ public class MeerkatService extends Service
             mUsbAccessory = accessoryList[0];
 
             // request permisssion to use the accessory
+            mPermissionGranted = false;
             mUsbManager.requestPermission(mUsbAccessory, mPermissionIntent);
         }
 
@@ -115,6 +125,20 @@ public class MeerkatService extends Service
         stopForeground(true);
         closeAccessory();
         Log.d(MeerkatApplication.TAG, "Service.onDestroy");
+    }
+
+    private void initSink()
+    {
+        mSink = new UsbDataSink(mApplication);
+    }
+
+    private void initSources()
+    {
+        DummyDataSource oSource1 = new DummyDataSource(mSink, (byte)0x10);
+        oSource1.start();
+
+        DummyDataSource oSource2 = new DummyDataSource(mSink, (byte)0x20);
+        oSource2.start();
     }
 
     private void closeAccessory()

@@ -9,9 +9,6 @@ import android.content.SharedPreferences;
 import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
 import android.preference.PreferenceManager;
 
-import fi.hiit.meerkat.datasource.AbstractDataSource;
-import fi.hiit.meerkat.datasink.AbstractDataSink;
-
 /**
   */
 public class MeerkatApplication extends Application implements OnSharedPreferenceChangeListener
@@ -21,9 +18,6 @@ public class MeerkatApplication extends Application implements OnSharedPreferenc
 
     private SharedPreferences mPrefs;
     private SharedPreferences.Editor mEditor;
-
-    private HashMap<String, AbstractDataSource> sources;
-    private AbstractDataSink mDataSink;
 
     @Override
     public void onCreate()

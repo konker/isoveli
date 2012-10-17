@@ -5,11 +5,13 @@ import fi.hiit.meerkat.MeerkatApplication;
 
 /**
  */
-public class LogcatDataSource extends AbstractDataSource
+public class LogcatDataSource implements IDataSource
 {
-    public LogcatDataSource(MeerkatApplication app)
+    private MeerkatApplication mApplication;
+
+    public LogcatDataSource(MeerkatApplication application)
     {
-        super(app);
+        mApplication = application;
     }
 
     @Override
@@ -31,10 +33,14 @@ public class LogcatDataSource extends AbstractDataSource
     }
 
     @Override
+    public void start()
+    {
+        Log.i(MeerkatApplication.TAG, "LogcatDataSource.start");
+    }
+
+    @Override
     public void stop()
     {
         Log.i(MeerkatApplication.TAG, "LogcatDataSource.stop");
     }
-
-
 }

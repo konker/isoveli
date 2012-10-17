@@ -6,16 +6,10 @@ import fi.hiit.meerkat.MeerkatApplication;
 
 /**
  */
-public abstract class AbstractDataSource implements Runnable
+public interface IDataSource extends Runnable
 {
-    protected MeerkatApplication app;
-
-    public AbstractDataSource(MeerkatApplication app)
-    {
-        this.app = app;
-    }
+    public abstract void start();
     public abstract void stop();
-
     public abstract String getLabel();
     public abstract String getDescription();
 }

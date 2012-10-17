@@ -6,11 +6,13 @@ import fi.hiit.meerkat.MeerkatApplication;
 
 /**
  */
-public class CameraDataSource extends AbstractDataSource
+public class CameraDataSource implements IDataSource
 {
-    public CameraDataSource(MeerkatApplication app)
+    private MeerkatApplication mApplication;
+
+    public CameraDataSource(MeerkatApplication application)
     {
-        super(app);
+        mApplication = application;
     }
 
     @Override
@@ -37,6 +39,12 @@ public class CameraDataSource extends AbstractDataSource
         Log.i(MeerkatApplication.TAG, "Camera opened: " + camera);
 
 
+    }
+
+    @Override
+    public void start()
+    {
+        Log.i(MeerkatApplication.TAG, "CameraDataSource.start");
     }
 
     @Override

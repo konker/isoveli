@@ -1,17 +1,33 @@
 package fi.hiit.meerkat.datasink;
 
-import android.util.Log;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.FileDescriptor;
 
-import fi.hiit.meerkat.DataController;
+import android.util.Log;
+import android.os.ParcelFileDescriptor;
+import android.hardware.usb.UsbManager;
+import android.hardware.usb.UsbAccessory;
+import android.content.Context;
+
 import fi.hiit.meerkat.MeerkatApplication;
 
 /**
  */
-public class UsbDataSink extends AbstractDataSink implements Runnable
+public class UsbDataSink implements IDataSink
 {
-    public UsbDataSink(DataController dataController)
+    private ParcelFileDescriptor mFileDescriptor;
+    private FileOutputStream mOutputStream;
+    
+    public UsbDataSink(MeerkatApplication application)
     {
-        super(dataController);
+        openAccessory(application);
+    }
+
+
+    public void onDestroy()
+    {
+        closeAccessory();
     }
 
     @Override
@@ -20,6 +36,7 @@ public class UsbDataSink extends AbstractDataSink implements Runnable
         return false;
     }
 
+    /*
     @Override
     public void run()
     {
@@ -33,22 +50,59 @@ public class UsbDataSink extends AbstractDataSink implements Runnable
             Log.d(MeerkatApplication.TAG, "sleep: interrupted: " + ex);
         }
     }
+    */
 
     @Override
-    public void write(byte channelId, byte[] data)
+    public synchronized void write(byte channelId, byte[] data)
     {
-        /*
+        byte[] packet = new byte[data.length + 1];
+        packet[0] = channelId;
+        System.arraycopy(data, 0, packet, 1, data.length);
         if (mOutputStream != null) {
             try {
-                mOutputStream.write(channelId);
-                mOutputStream.write(data);
+                mOutputStream.write(packet);
             }
             catch (IOException ex) {
                 // [TODO: should this be thrown up?]
                 Log.d(MeerkatApplication.TAG, "IOException: " + ex);
             }
         }
-        */
+    }
+
+    private void openAccessory(MeerkatApplication application)
+    {
+        UsbManager usbManager = (UsbManager)application.getSystemService(Context.USB_SERVICE);
+        UsbAccessory[] accessoryList = usbManager.getAccessoryList();
+        if (accessoryList != null && accessoryList.length > 0) {
+            mFileDescriptor = usbManager.openAccessory(accessoryList[0]);
+            if (mFileDescriptor != null) {
+                FileDescriptor fd = mFileDescriptor.getFileDescriptor();
+                mOutputStream = new FileOutputStream(fd);
+            }
+            else {
+                Log.d(MeerkatApplication.TAG, "Service.openAccessory: Failed to open accessory: 1");
+            }
+        }
+        else {
+            Log.d(MeerkatApplication.TAG, "Service.openAccessory: Failed to open accessory: 2");
+        }
+        Log.d(MeerkatApplication.TAG, "Service.openAccessory");
+    }
+
+    private void closeAccessory()
+    {
+        try {
+            if (mOutputStream != null) {
+                mOutputStream.close();
+            }
+            if (mFileDescriptor != null) {
+                mFileDescriptor.close();
+            }
+        }
+        catch(IOException ex) {
+            Log.d(MeerkatApplication.TAG, "Service: Error closing streams: " + ex);
+        }
+        Log.d(MeerkatApplication.TAG, "Service.closeAccessory");
     }
 }
 

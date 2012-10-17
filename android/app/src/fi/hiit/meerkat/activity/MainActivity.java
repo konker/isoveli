@@ -35,7 +35,6 @@ import com.actionbarsherlock.app.SherlockActivity;
 import fi.hiit.meerkat.R;
 import fi.hiit.meerkat.MeerkatApplication;
 import fi.hiit.meerkat.service.MeerkatService;
-import fi.hiit.meerkat.DataController;
 import fi.hiit.meerkat.datasink.*;
 
 
@@ -44,7 +43,6 @@ public class MainActivity extends SherlockActivity
     private static int counter = 0;
 
     private MeerkatApplication app;
-    private DataController mDataController;
     private UsbDataSink mDataSink;
 
 
@@ -56,12 +54,11 @@ public class MainActivity extends SherlockActivity
         setContentView(R.layout.main);
 
         this.app = (MeerkatApplication)getApplication();
-        this.mDataController = new DataController();
-
-        //this.setupUi();
 
         Intent intent = new Intent(this, MeerkatService.class);
         startService(intent);
+
+        this.setupUi();
 
         Log.d(MeerkatApplication.TAG, "Main.onCreate");
     }
