@@ -34,53 +34,19 @@ import com.actionbarsherlock.app.SherlockActivity;
 
 import fi.hiit.meerkat.R;
 import fi.hiit.meerkat.MeerkatApplication;
+import fi.hiit.meerkat.service.MeerkatService;
 import fi.hiit.meerkat.DataController;
+import fi.hiit.meerkat.datasink.*;
 
 
-public class MainActivity extends SherlockActivity implements Runnable
+public class MainActivity extends SherlockActivity
 {
-    private static final String ACTION_USB_PERMISSION =
-            "fi.hiit.meerkat.USB_PERMISSION";
     private static int counter = 0;
 
     private MeerkatApplication app;
-    //private DataController dataController;
+    private DataController mDataController;
+    private UsbDataSink mDataSink;
 
-    private PendingIntent mPermissionIntent;
-    private UsbManager mUsbManager;
-    private UsbAccessory mUsbAccessory;
-    private ParcelFileDescriptor mFileDescriptor;
-    private FileOutputStream mOutputStream;
-    private FileInputStream mInputStream;
-
-    private final BroadcastReceiver mUsbReceiver = new BroadcastReceiver() {
-        public void onReceive(Context context, Intent intent) {
-            String action = intent.getAction();
-            if (MainActivity.ACTION_USB_PERMISSION.equals(action)) {
-                synchronized (this) {
-                    UsbAccessory accessory = (UsbAccessory) intent.getParcelableExtra(UsbManager.EXTRA_ACCESSORY);
-
-                    if (intent.getBooleanExtra(UsbManager.EXTRA_PERMISSION_GRANTED, false)) {
-                        if(accessory != null){
-                            //call method to set up accessory communication
-                            openAccessory();
-                        }
-                    }
-                    else {
-                        Log.d(MeerkatApplication.TAG, "permission denied for accessory " + accessory);
-                    }
-                }
-            }
-            else if (UsbManager.ACTION_USB_ACCESSORY_DETACHED.equals(action)) {
-                Log.d(MeerkatApplication.TAG, "Accessory detached detected");
-                UsbAccessory accessory = (UsbAccessory)intent.getParcelableExtra(UsbManager.EXTRA_ACCESSORY);
-                if (accessory != null) {
-                    // call your method that cleans up and closes communication with the accessory
-                    closeAccessory();
-                }
-            }
-        }
-    };
 
     /** Called when the activity is first created. */
     @Override
@@ -90,140 +56,34 @@ public class MainActivity extends SherlockActivity implements Runnable
         setContentView(R.layout.main);
 
         this.app = (MeerkatApplication)getApplication();
-        //this.dataController = new DataController();
-        this.setupUi();
-        
-        mUsbManager = (UsbManager)getSystemService(Context.USB_SERVICE);
-        
-        // register the BroadcastReceiver
-        mPermissionIntent = PendingIntent.getBroadcast(this, 0, new Intent(ACTION_USB_PERMISSION), 0);
-        IntentFilter filter = new IntentFilter(ACTION_USB_PERMISSION);
-        registerReceiver(mUsbReceiver, filter);
+        this.mDataController = new DataController();
 
+        //this.setupUi();
 
-        Intent intent = getIntent();
-        mUsbAccessory = (UsbAccessory)intent.getParcelableExtra(UsbManager.EXTRA_ACCESSORY);
-
-        if (mUsbAccessory == null) {
-            UsbAccessory[] accessoryList = mUsbManager.getAccessoryList();
-            if (accessoryList != null && accessoryList.length > 0) {
-                mUsbAccessory = accessoryList[0];
-
-                // request permisssion to use the accessory
-                mUsbManager.requestPermission(mUsbAccessory, mPermissionIntent);
-
-            }
-        }
-        else {
-            openAccessory();
-        }
-
-
-
-
-        /*
-        mUsbManager = (UsbManager) getSystemService(Context.USB_SERVICE);
-
-        Intent intent = getIntent();
-        mUsbAccessory = (UsbAccessory)intent.getParcelableExtra(UsbManager.EXTRA_ACCESSORY);
-
-        if (mUsbAccessory == null) {
-            UsbAccessory[] accessoryList = mUsbManager.getAccessoryList();
-            if (accessoryList != null && accessoryList.length > 0) {
-                mUsbAccessory = accessoryList[0];
-            }
-        }
-
-        if (mUsbAccessory != null) {
-            Log.d(MeerkatApplication.TAG, "openAccessory: " + mUsbAccessory);
-            ParcelFileDescriptor mFileDescriptor = mUsbManager.openAccessory(mUsbAccessory);
-            if (mFileDescriptor != null) {
-                FileDescriptor fd = mFileDescriptor.getFileDescriptor();
-                mInputStream = new FileInputStream(fd);
-                mOutputStream = new FileOutputStream(fd);
-
-                try {
-                    mOutputStream.write(("-KONKER " + MainActivity.counter++ + "").getBytes());
-                }
-                catch (IOException ex) {
-                    Log.d(MeerkatApplication.TAG, "IOException: " + ex);
-                }
-                //Thread thread = new Thread(null, this, "AccessoryThread");
-                //thread.start();
-            }
-        }
-        */
+        Intent intent = new Intent(this, MeerkatService.class);
+        startService(intent);
 
         Log.d(MeerkatApplication.TAG, "Main.onCreate");
     }
 
-    private void closeAccessory()
-    {
-        try {
-            if (mOutputStream != null) {
-                mOutputStream.close();
-            }
-            if (mInputStream != null) {
-                mInputStream.close();
-            }
-            if (mFileDescriptor != null) {
-                mFileDescriptor.close();
-            }
-        }
-        catch(IOException ex) {
-            Log.d(MeerkatApplication.TAG, "Error closing streams: " + ex);
-        }
-        Log.d(MeerkatApplication.TAG, "Main.closeAccessory");
-    }
-
-    private void openAccessory()
-    {
-        mFileDescriptor = mUsbManager.openAccessory(mUsbAccessory);
-        if (mFileDescriptor != null) {
-            FileDescriptor fd = mFileDescriptor.getFileDescriptor();
-            mInputStream = new FileInputStream(fd);
-            mOutputStream = new FileOutputStream(fd);
-
-            //Thread thread = new Thread(null, this, "AccessoryThread");
-            //thread.start();
-        }
-        else {
-            Log.d(MeerkatApplication.TAG, "Main.openAccessory: Failed to open accessory");
-        }
-        Log.d(MeerkatApplication.TAG, "Main.openAccessory");
-    }
-
-    @Override
-    public void run()
-    {
-        while (true) {
-            synchronized(this) {
-                if (mOutputStream != null) {
-                    try {
-                        mOutputStream.write(("-KONKER " + MainActivity.counter++ + "").getBytes());
-                    }
-                    catch (IOException ex) {
-                        Log.d(MeerkatApplication.TAG, "write: failed: " + ex);
-                    }
-                    Log.d(MeerkatApplication.TAG, "write: " + MainActivity.counter);
-                }
-            }
-            try {
-                Thread.sleep(1000);
-            }
-            catch (InterruptedException ex) {
-                Log.d(MeerkatApplication.TAG, "sleep: interrupted: " + ex);
-            }
-        }
-    }
-
     private void setupUi()
     {
-        Button buttonPing = (Button)findViewById(R.id.buttonPing);
-        buttonPing.setOnClickListener(new View.OnClickListener() {
+        Button buttonMasterOnOffToggle = (Button)findViewById(R.id.buttonMasterOnOffToggle);
+        buttonMasterOnOffToggle.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Log.d(MeerkatApplication.TAG, "Main.buttonPing clicked");
+                Log.d(MeerkatApplication.TAG, "Main.buttonMasterOnOffToggle clicked");
+                /*
+                if (app.isActive()) {
+                    app.stopAll();
+                    view.setText(R.string.start);
+                }
+                else {
+                    app.startAll();
+                    view.setText(R.string.stop);
+                }
+                */
+                /*
                 if (mOutputStream != null) {
                     try {
                         mOutputStream.write(("KONKER " + MainActivity.counter++ + "").getBytes());
@@ -232,9 +92,11 @@ public class MainActivity extends SherlockActivity implements Runnable
                         Log.d(MeerkatApplication.TAG, "IOException: " + ex);
                     }
                 }
+                */
             }
         });
 
+        /*
         Button buttonPong = (Button)findViewById(R.id.buttonPong);
         buttonPong.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -252,6 +114,7 @@ public class MainActivity extends SherlockActivity implements Runnable
                 }
             }
         });
+        */
     }
 
 
@@ -322,7 +185,6 @@ public class MainActivity extends SherlockActivity implements Runnable
     protected void onDestroy()
     {
         super.onDestroy();
-        closeAccessory();
 
         Log.d(MeerkatApplication.TAG, "Main.onDestroy");
     }

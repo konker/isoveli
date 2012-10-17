@@ -4,22 +4,11 @@
     android:layout_width="fill_parent"
     android:layout_height="fill_parent"
     >
-    <TextView
-        android:id="@id/textMessage" 
-        android:layout_width="fill_parent"
-        android:layout_height="wrap_content"
-        />
     <Button
-        android:id="@+id/buttonPing"
+        android:id="@+id/buttonMasterOnOffToggle"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
-        android:text="Ping"
-        />
-    <Button
-        android:id="@+id/buttonPong"
-        android:layout_width="fill_parent"
-        android:layout_height="wrap_content"
-        android:text="Pong"
+        android:text="@string/start"
         />
 </LinearLayout>
 

@@ -1,6 +1,6 @@
 package fi.hiit.meerkat;
 
-import java.util.ArrayList;
+import java.util.HashMap;
 
 import android.util.Log;
 import android.app.Application;
@@ -22,7 +22,7 @@ public class MeerkatApplication extends Application implements OnSharedPreferenc
     private SharedPreferences mPrefs;
     private SharedPreferences.Editor mEditor;
 
-    private ArrayList<AbstractDataSource> mSources;
+    private HashMap<String, AbstractDataSource> sources;
     private AbstractDataSink mDataSink;
 
     @Override

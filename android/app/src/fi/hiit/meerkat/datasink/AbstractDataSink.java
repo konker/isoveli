@@ -13,6 +13,8 @@ public abstract class AbstractDataSink
         this.dataController = dataController;
     }
 
-    abstract void write();
+    public abstract boolean isActive();
+
+    abstract void write(byte channelId, byte[] data);
 }
 

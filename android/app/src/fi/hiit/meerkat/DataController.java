@@ -8,44 +8,39 @@ import android.util.Log;
 
 import fi.hiit.meerkat.datasource.*;
 import fi.hiit.meerkat.datasink.*;
+import fi.hiit.meerkat.MeerkatApplication;
 
 public class DataController
 {
     protected HashMap<String, AbstractDataSource> sources;
-    protected HashMap<String, AbstractDataSink> sinks;
+    protected UsbDataSink mDataSink;
 
     public DataController()
     {
         sources = new HashMap<String, AbstractDataSource>();
-        sinks = new HashMap<String, AbstractDataSink>();
+        mDataSink = new UsbDataSink(this);
 
         initSources();
-        initSinks();
-
         startSources();
     }
 
-    public boolean write(byte[] data)
+    public void write(byte channelId, byte[] data)
     {
-        //[TODO]
-        return true;
+        mDataSink.write(channelId, data);
     }
 
     public void initSources()
     {
-        sources.put("camera", new CameraDataSource(this));
-    }
-
-    public void initSinks()
-    {
-        sinks.put("log", new LogDataSink(this));
+        // [TODO]
     }
 
     public void startSources()
     {
+        /*[TODO]
         for (String s : sources.keySet()) { 
-            Log.i("meerkat", "Starting source: " + s);
+            Log.i(MeerkatApplication.TAG, "DataController: Starting source: " + s);
             sources.get(s).start();
         }
+        */
     }
 }

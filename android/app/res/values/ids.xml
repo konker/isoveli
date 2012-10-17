@@ -2,5 +2,6 @@
 <resources>
     <item type="id" name="textMessage"/>
     <item type="id" name="menuPreferences"/>
+    <item type="id" name="serviceNotificationId"/>
 </resources>
 
