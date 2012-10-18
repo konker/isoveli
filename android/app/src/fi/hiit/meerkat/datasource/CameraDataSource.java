@@ -6,6 +6,7 @@ import fi.hiit.meerkat.MeerkatApplication;
 
 /**
  */
+/*
 public class CameraDataSource implements IDataSource
 {
     private MeerkatApplication mApplication;
@@ -34,7 +35,7 @@ public class CameraDataSource implements IDataSource
         Camera camera = getCameraInstance();
         if (camera == null) {
             Log.i(MeerkatApplication.TAG, "Camera could not be opened");
-            /*[TODO: handle camera error]*/
+            //[TODO: handle camera error]
         }
         Log.i(MeerkatApplication.TAG, "Camera opened: " + camera);
 
@@ -53,7 +54,7 @@ public class CameraDataSource implements IDataSource
         Log.i(MeerkatApplication.TAG, "CameraDataSource.stop");
     }
 
-    /** A safe way to get an instance of the Camera object. */
+    // A safe way to get an instance of the Camera object.
     public static Camera getCameraInstance()
     {
         Camera c = null;
@@ -67,3 +68,4 @@ public class CameraDataSource implements IDataSource
     }
 
 }
+*/

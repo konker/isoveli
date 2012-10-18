@@ -25,6 +25,8 @@ class Storage(BaseStorage):
 
         try:
             self.conn = sqlite3.connect(database)
+            # [FIXME: http://stackoverflow.com/questions/3425320/sqlite3-programmingerror-you-must-not-use-8-bit-bytestrings-unless-you-use-a-te ]
+            self.conn.text_factory = str
             self.cursor = self.conn.cursor()
             self._ddl()
         except Exception as ex:

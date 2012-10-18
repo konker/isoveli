@@ -3,22 +3,18 @@ package fi.hiit.meerkat.datasource;
 import java.lang.Thread;
 import android.util.Log;
 import fi.hiit.meerkat.MeerkatApplication;
-import fi.hiit.meerkat.service.MeerkatService;
 import fi.hiit.meerkat.datasink.IDataSink;
 
 /**
  */
-public class DummyDataSource implements IDataSource
+public class DummyDataSource extends AbstractPeriodicDataSource
 {
-    private MeerkatService mService;
-    private Thread mThread;
-    private byte mChannelId;
-    private IDataSink mSink;
+    private int i;
 
-    public DummyDataSource(IDataSink sink, byte channelId)
+    public DummyDataSource(IDataSink sink, byte channelId, int periodMs)
     {
-        mChannelId = channelId;
-        mSink = sink;
+        super(sink, channelId, periodMs);
+        i = 0;
     }
 
     @Override
@@ -34,34 +30,16 @@ public class DummyDataSource implements IDataSource
     }
 
     @Override
-    public void start()
+    public void tick()
     {
-        Thread mThread = new Thread(this);
-        mThread.start();
-        Log.i(MeerkatApplication.TAG, "DummyDataSource.start");
-    }
-
-    @Override
-    public void run()
-    {
-        int i = 1;
-        try {
-            while (true) {
-                Thread.sleep(1000);
-                mSink.write(mChannelId, ("DummyDataSource: TICK: " + i++).getBytes());
-                Log.i(MeerkatApplication.TAG, "DummyDataSource: " + mChannelId + ": run: TICK: " + i);
-            }
+        byte[] payload = new byte[512];
+        for (int j=1; j<=512; j++) {
+            payload[j-1] = (byte)(j % 255);
         }
-        catch(InterruptedException ex) {
-            Log.i(MeerkatApplication.TAG, "DummyDataSource: run: interrupted"); 
-        }
-        Log.i(MeerkatApplication.TAG, "DummyDataSource.run");
-    }
+        payload[511] = (byte)(i++ % 255);
 
-    @Override
-    public void stop()
-    {
-        Log.i(MeerkatApplication.TAG, "DummyDataSource.stop");
+        mSink.write(mChannelId, payload);
+        Log.i(MeerkatApplication.TAG, "DummyDataSource: " + mChannelId + ": run: TICK: " + i + ":|" + (new String(payload)) + "|");
     }
 }
 

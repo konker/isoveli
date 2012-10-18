@@ -12,45 +12,37 @@ import android.content.Context;
 
 import fi.hiit.meerkat.MeerkatApplication;
 
+
 /**
  */
 public class UsbDataSink implements IDataSink
 {
     private ParcelFileDescriptor mFileDescriptor;
     private FileOutputStream mOutputStream;
+    private boolean mActive;
     
-    public UsbDataSink(MeerkatApplication application)
+    public UsbDataSink()
     {
-        openAccessory(application);
-    }
-
-
-    public void onDestroy()
-    {
-        closeAccessory();
+        mActive = false;
     }
 
     @Override
     public boolean isActive()
     {
-        return false;
+        return mActive;
     }
 
-    /*
     @Override
-    public void run()
+    public void open(Context context)
     {
-        synchronized(this) {
-            // DO SOMETHING?
-        }
-        try {
-            Thread.sleep(1000);
-        }
-        catch (InterruptedException ex) {
-            Log.d(MeerkatApplication.TAG, "sleep: interrupted: " + ex);
-        }
+        openAccessory(context);
     }
-    */
+
+    @Override
+    public void close()
+    {
+        closeAccessory();
+    }
 
     @Override
     public synchronized void write(byte channelId, byte[] data)
@@ -69,9 +61,10 @@ public class UsbDataSink implements IDataSink
         }
     }
 
-    private void openAccessory(MeerkatApplication application)
+    // Helper methods
+    private void openAccessory(Context context)
     {
-        UsbManager usbManager = (UsbManager)application.getSystemService(Context.USB_SERVICE);
+        UsbManager usbManager = (UsbManager)context.getSystemService(Context.USB_SERVICE);
         UsbAccessory[] accessoryList = usbManager.getAccessoryList();
         if (accessoryList != null && accessoryList.length > 0) {
             mFileDescriptor = usbManager.openAccessory(accessoryList[0]);
@@ -80,12 +73,15 @@ public class UsbDataSink implements IDataSink
                 mOutputStream = new FileOutputStream(fd);
             }
             else {
+                mActive = false;
                 Log.d(MeerkatApplication.TAG, "Service.openAccessory: Failed to open accessory: 1");
             }
         }
         else {
+            mActive = false;
             Log.d(MeerkatApplication.TAG, "Service.openAccessory: Failed to open accessory: 2");
         }
+        mActive = true;
         Log.d(MeerkatApplication.TAG, "Service.openAccessory");
     }
 
@@ -102,6 +98,7 @@ public class UsbDataSink implements IDataSink
         catch(IOException ex) {
             Log.d(MeerkatApplication.TAG, "Service: Error closing streams: " + ex);
         }
+        mActive = false;
         Log.d(MeerkatApplication.TAG, "Service.closeAccessory");
     }
 }

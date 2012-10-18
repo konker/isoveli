@@ -79,6 +79,7 @@ class Accessory():
         while(True):
             try:
                 data = self.epIn.read(self.epIn.wMaxPacketSize, timeout=0)
+                print "|%s|" % data;
                 channel_id = data.pop(0)
                 self.storage.write_array(channel_id, data)
             except usb.core.USBError as ex1:
@@ -114,7 +115,7 @@ class Accessory():
             try:
                 self.switch_device(config['accessory'])
                 logging.info("Device switched to accessory mode.")
-                time.sleep(1)
+                time.sleep(2)
             except Exception as ex:
                 logging.error("Could not switch device to accessory mode: %s. Exiting." % ex)
                 self.close()

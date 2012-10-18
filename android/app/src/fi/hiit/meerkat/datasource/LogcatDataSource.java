@@ -5,6 +5,7 @@ import fi.hiit.meerkat.MeerkatApplication;
 
 /**
  */
+/*
 public class LogcatDataSource implements IDataSource
 {
     private MeerkatApplication mApplication;
@@ -44,3 +45,4 @@ public class LogcatDataSource implements IDataSource
         Log.i(MeerkatApplication.TAG, "LogcatDataSource.stop");
     }
 }
+*/

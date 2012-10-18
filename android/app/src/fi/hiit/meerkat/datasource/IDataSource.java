@@ -1,7 +1,6 @@
 package fi.hiit.meerkat.datasource;
 
 import java.lang.Runnable;
-import fi.hiit.meerkat.MeerkatApplication;
 
 
 /**

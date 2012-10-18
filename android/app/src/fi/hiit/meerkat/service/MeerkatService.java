@@ -27,53 +27,15 @@ import fi.hiit.meerkat.datasource.*;
 
 /**
   */
-
 public class MeerkatService extends Service
 {
     private static final String ACTION_USB_PERMISSION =
             "fi.hiit.meerkat.USB_PERMISSION";
 
     private MeerkatApplication mApplication;
-    private PendingIntent mPermissionIntent;
-    private UsbManager mUsbManager;
-    private UsbAccessory mUsbAccessory;
-    private ParcelFileDescriptor mFileDescriptor;
-    private FileOutputStream mOutputStream;
-    private boolean mPermissionGranted;
     private IDataSink mSink;
     //protected HashMap<String, IDataSource> sources;
-
-    private final BroadcastReceiver mUsbReceiver = new BroadcastReceiver() {
-        public void onReceive(Context context, Intent intent) {
-            String action = intent.getAction();
-            if (ACTION_USB_PERMISSION.equals(action)) {
-                synchronized (this) {
-                    UsbAccessory accessory = (UsbAccessory) intent.getParcelableExtra(UsbManager.EXTRA_ACCESSORY);
-
-                    if (intent.getBooleanExtra(UsbManager.EXTRA_PERMISSION_GRANTED, false)) {
-                        if(accessory != null){
-                            // set up accessory communication
-                            mPermissionGranted = true;
-                            //openAccessory();
-                            initSink();
-                            initSources();
-                        }
-                    }
-                    else {
-                        Log.d(MeerkatApplication.TAG, "permission denied for accessory " + accessory);
-                    }
-                }
-            }
-            else if (UsbManager.ACTION_USB_ACCESSORY_DETACHED.equals(action)) {
-                Log.d(MeerkatApplication.TAG, "Accessory detached detected");
-                UsbAccessory accessory = (UsbAccessory)intent.getParcelableExtra(UsbManager.EXTRA_ACCESSORY);
-                if (accessory != null) {
-                    // clean up and close communication with the accessory
-                    //closeAccessory();
-                }
-            }
-        }
-    };
+    private DummyDataSource mSource1, mSource2;
 
     @Override
     public void onCreate()
@@ -81,21 +43,9 @@ public class MeerkatService extends Service
         super.onCreate();
         this.mApplication = (MeerkatApplication)getApplication();
 
-        mUsbManager = (UsbManager)getSystemService(Context.USB_SERVICE);
-        
-        // register the BroadcastReceiver
-        mPermissionIntent = PendingIntent.getBroadcast(this, 0, new Intent(ACTION_USB_PERMISSION), 0);
-        IntentFilter filter = new IntentFilter(ACTION_USB_PERMISSION);
-        registerReceiver(mUsbReceiver, filter);
+        initSink();
 
-        UsbAccessory[] accessoryList = mUsbManager.getAccessoryList();
-        if (accessoryList != null && accessoryList.length > 0) {
-            mUsbAccessory = accessoryList[0];
-
-            // request permisssion to use the accessory
-            mPermissionGranted = false;
-            mUsbManager.requestPermission(mUsbAccessory, mPermissionIntent);
-        }
+        initSources();
 
         Log.d(MeerkatApplication.TAG, "Service.onCreate");
     }
@@ -105,13 +55,18 @@ public class MeerkatService extends Service
     {
         super.onStartCommand(intent, flags, startId);
 
-        Notification notification = new Notification(R.drawable.ic_launcher, getText(R.string.app_name),
-                                                    System.currentTimeMillis());
+        // Notification with app icon
+        Notification notification =
+            new Notification(R.drawable.ic_launcher, getText(R.string.app_name),
+                             System.currentTimeMillis());
+        // clicking notification opens MainActivity
         Intent notificationIntent = new Intent(this, MainActivity.class);
-        PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, notificationIntent, 0);
+        PendingIntent pendingIntent =
+            PendingIntent.getActivity(this, 0, notificationIntent, 0);
         notification.setLatestEventInfo(this, getText(R.string.app_name),
                                         getText(R.string.app_name), pendingIntent);
         
+        // Start the service in the foreground
         startForeground(R.id.serviceNotificationId, notification);
 
         Log.d(MeerkatApplication.TAG, "Service.onStartCommand");
@@ -122,55 +77,34 @@ public class MeerkatService extends Service
     public void onDestroy()
     {
         super.onDestroy();
+        closeSources();
+        closeSink();
         stopForeground(true);
-        closeAccessory();
         Log.d(MeerkatApplication.TAG, "Service.onDestroy");
     }
 
     private void initSink()
     {
-        mSink = new UsbDataSink(mApplication);
+        mSink = new UsbDataSink();
+        mSink.open(this);
+    }
+    private void closeSink()
+    {
+        mSink.close();
     }
 
     private void initSources()
     {
-        DummyDataSource oSource1 = new DummyDataSource(mSink, (byte)0x10);
-        oSource1.start();
+        mSource1 = new DummyDataSource(mSink, (byte)0x10, 1000);
+        mSource1.start();
 
-        DummyDataSource oSource2 = new DummyDataSource(mSink, (byte)0x20);
-        oSource2.start();
+        mSource2 = new DummyDataSource(mSink, (byte)0x20, 2000);
+        mSource2.start();
     }
-
-    private void closeAccessory()
+    private void closeSources()
     {
-        try {
-            if (mOutputStream != null) {
-                mOutputStream.close();
-            }
-            if (mFileDescriptor != null) {
-                mFileDescriptor.close();
-            }
-        }
-        catch(IOException ex) {
-            Log.d(MeerkatApplication.TAG, "Service: Error closing streams: " + ex);
-        }
-        Log.d(MeerkatApplication.TAG, "Service.closeAccessory");
-    }
-
-    private void openAccessory()
-    {
-        mFileDescriptor = mUsbManager.openAccessory(mUsbAccessory);
-        if (mFileDescriptor != null) {
-            FileDescriptor fd = mFileDescriptor.getFileDescriptor();
-            mOutputStream = new FileOutputStream(fd);
-
-            //Thread thread = new Thread(null, this, "AccessoryThread");
-            //thread.start();
-        }
-        else {
-            Log.d(MeerkatApplication.TAG, "Service.openAccessory: Failed to open accessory");
-        }
-        Log.d(MeerkatApplication.TAG, "Service.openAccessory");
+        mSource1.stop();
+        mSource2.stop();
     }
 
     @Override
