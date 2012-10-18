@@ -17,6 +17,8 @@ import fi.hiit.meerkat.MeerkatApplication;
  */
 public class UsbDataSink implements IDataSink
 {
+    public static int PACKET_MAX_BYTES = 8388608;
+
     private ParcelFileDescriptor mFileDescriptor;
     private FileOutputStream mOutputStream;
     private boolean mActive;
@@ -46,19 +48,29 @@ public class UsbDataSink implements IDataSink
 
     @Override
     public synchronized void write(byte channelId, byte[] data)
+            throws DataSinkPacketTooBigException
     {
-        byte[] packet = new byte[data.length + 1];
-        packet[0] = channelId;
-        System.arraycopy(data, 0, packet, 1, data.length);
         if (mOutputStream != null) {
             try {
-                mOutputStream.write(packet);
+                // check that data + channelId is not greater than max packet size
+                if (data.length >= PACKET_MAX_BYTES) {
+                    throw new DataSinkPacketTooBigException();
+                }
+                mOutputStream.write(makePacket(channelId, data));
             }
             catch (IOException ex) {
                 // [TODO: should this be thrown up?]
                 Log.d(MeerkatApplication.TAG, "IOException: " + ex);
             }
         }
+    }
+
+    private byte[] makePacket(byte channelId, byte[] data)
+    {
+        byte[] packet = new byte[data.length + 1];
+        packet[0] = channelId;
+        System.arraycopy(data, 0, packet, 1, data.length);
+        return packet;
     }
 
     // Helper methods

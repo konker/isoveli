@@ -56,6 +56,7 @@ USB_ACCESSORY_VENDOR_ID       = 0x18D1
 USB_ACCESSORY_PRODUCT_ID      = 0x2D00
 USB_ACCESSORY_ADB_PRODUCT_ID  = 0x2D01
 
+PACKET_MAX_BYTES              = 8388608 # 8mb
 
 class Accessory():
     def __init__(self):
@@ -78,7 +79,7 @@ class Accessory():
         # Main loop
         while(True):
             try:
-                data = self.epIn.read(self.epIn.wMaxPacketSize, timeout=0)
+                data = self.epIn.read(PACKET_MAX_BYTES, timeout=0)
                 print "|%s|" % data;
                 channel_id = data.pop(0)
                 self.storage.write_array(channel_id, data)

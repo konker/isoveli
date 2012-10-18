@@ -13,12 +13,14 @@ public abstract class AbstractPeriodicDataSource implements IDataSource
     protected byte mChannelId;
     protected IDataSink mSink;
     protected int mPeriodMs;
+    protected boolean mRun;
 
     public AbstractPeriodicDataSource(IDataSink sink, byte channelId, int periodMs)
     {
         mPeriodMs = periodMs;
         mChannelId = channelId;
         mSink = sink;
+        mRun = true;
     }
 
     public abstract void tick();
@@ -26,7 +28,8 @@ public abstract class AbstractPeriodicDataSource implements IDataSource
     @Override
     public void start()
     {
-        Thread mThread = new Thread(this);
+        mRun = true;
+        mThread = new Thread(this);
         mThread.start();
         Log.i(MeerkatApplication.TAG, "AbstractPeriodicDataSource.start");
     }
@@ -34,22 +37,25 @@ public abstract class AbstractPeriodicDataSource implements IDataSource
     @Override
     public void run()
     {
+        Log.i(MeerkatApplication.TAG, "AbstractPeriodicDataSource.run");
         try {
-            while (true) {
+            while (mRun) {
+                // execute the main task of the thread
                 tick();
+
+                // sleep for mPeriodMs milliseconds
                 Thread.sleep(mPeriodMs);
             }
         }
         catch(InterruptedException ex) {
             Log.i(MeerkatApplication.TAG, "AbstractPeriodicDataSource: run: interrupted"); 
         }
-        Log.i(MeerkatApplication.TAG, "AbstractPeriodicDataSource.run");
     }
 
     @Override
     public void stop()
     {
-        mThread.stop();
+        mRun = false;
         Log.i(MeerkatApplication.TAG, "AbstractPeriodicDataSource.stop");
     }
 }

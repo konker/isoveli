@@ -42,8 +42,9 @@ public class MainActivity extends SherlockActivity
 {
     private static int counter = 0;
 
-    private MeerkatApplication app;
+    private MeerkatApplication mApplication;
     private UsbDataSink mDataSink;
+    private boolean mActive;
 
 
     /** Called when the activity is first created. */
@@ -53,15 +54,27 @@ public class MainActivity extends SherlockActivity
         super.onCreate(savedInstanceState);
         setContentView(R.layout.main);
 
-        this.app = (MeerkatApplication)getApplication();
+        mApplication = (MeerkatApplication)getApplication();
+        mActive = false;
 
-        Intent intent = new Intent(this, MeerkatService.class);
-        startService(intent);
-
-        this.setupUi();
+        setupUi();
 
         Log.d(MeerkatApplication.TAG, "Main.onCreate");
     }
+
+    private void start()
+    {
+        Intent intent = new Intent(this, MeerkatService.class);
+        startService(intent);
+        mActive = true;
+    }
+    private void stop()
+    {
+        Intent intent = new Intent(this, MeerkatService.class);
+        stopService(intent);
+        mActive = false;
+    }
+
 
     private void setupUi()
     {
@@ -70,50 +83,17 @@ public class MainActivity extends SherlockActivity
             @Override
             public void onClick(View view) {
                 Log.d(MeerkatApplication.TAG, "Main.buttonMasterOnOffToggle clicked");
-                /*
-                if (app.isActive()) {
-                    app.stopAll();
-                    view.setText(R.string.start);
+                if (mActive) {
+                    stop();
+                    ((Button)view).setText(getString(R.string.start));
                 }
                 else {
-                    app.startAll();
-                    view.setText(R.string.stop);
-                }
-                */
-                /*
-                if (mOutputStream != null) {
-                    try {
-                        mOutputStream.write(("KONKER " + MainActivity.counter++ + "").getBytes());
-                    }
-                    catch (IOException ex) {
-                        Log.d(MeerkatApplication.TAG, "IOException: " + ex);
-                    }
-                }
-                */
-            }
-        });
-
-        /*
-        Button buttonPong = (Button)findViewById(R.id.buttonPong);
-        buttonPong.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                Log.d(MeerkatApplication.TAG, "Main.buttonPong clicked");
-                if (mInputStream != null) {
-                    try {
-                        byte[] buf = new byte[128];
-                        int c = mInputStream.read(buf);
-                        Log.d(MeerkatApplication.TAG, "read: (" + c + ")|" + new String(buf) + "|");
-                    }
-                    catch (IOException ex) {
-                        Log.d(MeerkatApplication.TAG, "IOException: " + ex);
-                    }
+                    start();
+                    ((Button)view).setText(getString(R.string.stop));
                 }
             }
         });
-        */
     }
-
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu)
@@ -183,6 +163,7 @@ public class MainActivity extends SherlockActivity
     {
         super.onDestroy();
 
+        stop();
         Log.d(MeerkatApplication.TAG, "Main.onDestroy");
     }
 }

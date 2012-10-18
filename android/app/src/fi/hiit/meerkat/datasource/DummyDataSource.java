@@ -4,6 +4,7 @@ import java.lang.Thread;
 import android.util.Log;
 import fi.hiit.meerkat.MeerkatApplication;
 import fi.hiit.meerkat.datasink.IDataSink;
+import fi.hiit.meerkat.datasink.DataSinkPacketTooBigException;
 
 /**
  */
@@ -20,26 +21,33 @@ public class DummyDataSource extends AbstractPeriodicDataSource
     @Override
     public String getLabel()
     {
-        return "DummyDataSource";
+        return "Dumm Data Source";
     }
 
     @Override
     public String getDescription()
     {
-        return "Dummy data source. Just emmits dummy data.";
+        return "Dummy data source. Periodically emmits dummy data.";
     }
 
     @Override
     public void tick()
     {
-        byte[] payload = new byte[512];
-        for (int j=1; j<=512; j++) {
-            payload[j-1] = (byte)(j % 255);
+        ++i;
+        byte[] payload = new byte[16384*2];
+        for (int j=0; j<payload.length; j++) {
+            payload[j] = (byte)((48 + i) % 255);
         }
-        payload[511] = (byte)(i++ % 255);
+        payload[0] = '*';
+        payload[payload.length - 1] = '*';
 
-        mSink.write(mChannelId, payload);
-        Log.i(MeerkatApplication.TAG, "DummyDataSource: " + mChannelId + ": run: TICK: " + i + ":|" + (new String(payload)) + "|");
+        try {
+            mSink.write(mChannelId, payload);
+            Log.i(MeerkatApplication.TAG, "DummyDataSource: " + mChannelId + ": run: TICK: " + i + ":|" + (new String(payload)) + "|");
+        }
+        catch (DataSinkPacketTooBigException ex) {
+            Log.e(MeerkatApplication.TAG, "Packet too big. Dropping.");
+        }
     }
 }
 

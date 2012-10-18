@@ -3,5 +3,5 @@
     <string name="app_name">Meerkat</string>
     <string name="menu_preferences">Settings</string>
     <string name="start">Start</string>
-    <string name="sop">Stop</string>
+    <string name="stop">Stop</string>
 </resources>
