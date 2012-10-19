@@ -8,6 +8,7 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
 import android.preference.PreferenceManager;
+import android.hardware.Camera;
 
 /**
   */
@@ -19,6 +20,7 @@ public class MeerkatApplication extends Application implements OnSharedPreferenc
     private SharedPreferences mPrefs;
     private SharedPreferences.Editor mEditor;
     private boolean mActive;
+    public Camera mCamera; // [FIXME: public]
 
     @Override
     public void onCreate()
@@ -37,7 +39,9 @@ public class MeerkatApplication extends Application implements OnSharedPreferenc
     public void onTerminate()
     {
         super.onTerminate();
-
+        if (mCamera != null) {
+            mCamera.release();
+        }
         Log.i(MeerkatApplication.TAG, "App.onTerminate");
     }
 

@@ -17,7 +17,7 @@ public abstract class AbstractPeriodicDataSource implements IDataSource
     protected int mPeriodMs;
     protected boolean mRun;
     protected boolean mTickLock;
-    protected Context mContext;
+    protected MeerkatApplication mApplication;
 
     public AbstractPeriodicDataSource(IDataSink sink, byte channelId, int periodMs)
     {
@@ -32,8 +32,8 @@ public abstract class AbstractPeriodicDataSource implements IDataSource
     public abstract void tick();
 
     @Override
-    public boolean init(Context context) {
-        mContext = context;
+    public boolean init(MeerkatApplication application) {
+        mApplication = application;
         return true;
     }
 

@@ -49,17 +49,17 @@ public class WifiScanDataSource extends AbstractPeriodicDataSource
     {
         Log.i(MeerkatApplication.TAG,  "WifiScanDataSource.stop");
 
-        mContext.unregisterReceiver(mReceiver);
+        mApplication.unregisterReceiver(mReceiver);
         super.stop();
     }
 
     @Override
-    public boolean init(Context context)
+    public boolean init(MeerkatApplication application)
     {
         Log.i(MeerkatApplication.TAG,  "WifiScanDataSource.init");
-        super.init(context);
+        super.init(application);
 
-        mWifiManager = (WifiManager)mContext.getSystemService(Context.WIFI_SERVICE);
+        mWifiManager = (WifiManager)mApplication.getSystemService(Context.WIFI_SERVICE);
         if (mWifiManager.isWifiEnabled() == false) {
             // [FIXME: how should this be handled?]
             Log.i(MeerkatApplication.TAG,  "Wifi is disabled... enabling.");
@@ -76,7 +76,7 @@ public class WifiScanDataSource extends AbstractPeriodicDataSource
                 }
             }
         };
-        mContext.registerReceiver(mReceiver,
+        mApplication.registerReceiver(mReceiver,
                 new IntentFilter(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION));
 
         return true;

@@ -10,8 +10,12 @@ import android.content.BroadcastReceiver;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.FrameLayout;
 import android.view.View;
 import android.view.View.OnClickListener;
+
+import android.hardware.Camera;
+import android.hardware.Camera.PictureCallback;
 
 import android.hardware.usb.UsbManager;
 import android.hardware.usb.UsbAccessory;
@@ -20,12 +24,6 @@ import android.os.ParcelFileDescriptor;
 import java.lang.Runnable;
 import java.lang.Thread;
 import java.lang.InterruptedException;
-import java.io.FileDescriptor;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.IOException;
 
 import com.actionbarsherlock.view.Menu;
 import com.actionbarsherlock.view.MenuItem;
@@ -36,6 +34,7 @@ import fi.hiit.meerkat.R;
 import fi.hiit.meerkat.MeerkatApplication;
 import fi.hiit.meerkat.service.MeerkatService;
 import fi.hiit.meerkat.datasink.*;
+import fi.hiit.meerkat.view.CameraPreview;
 
 
 public class MainActivity extends SherlockActivity
@@ -44,6 +43,8 @@ public class MainActivity extends SherlockActivity
 
     private MeerkatApplication mApplication;
     private UsbDataSink mDataSink;
+    private CameraPreview mPreview;
+    private PictureCallback mPictureCallback;
 
     /** Called when the activity is first created. */
     @Override
@@ -69,6 +70,9 @@ public class MainActivity extends SherlockActivity
     {
         Intent intent = new Intent(this, MeerkatService.class);
         stopService(intent);
+        if (mApplication.mCamera != null) {
+            mApplication.mCamera.release();
+        }
         mApplication.setActive(false);
     }
 
@@ -78,10 +82,10 @@ public class MainActivity extends SherlockActivity
         Button buttonMasterOnOffToggle =
             (Button)findViewById(R.id.buttonMasterOnOffToggle);
         if (mApplication.isActive()) {
-            buttonMasterOnOffToggle.setText(getString(R.string.start));
+            buttonMasterOnOffToggle.setText(getString(R.string.stop));
         }
         else {
-            buttonMasterOnOffToggle.setText(getString(R.string.stop));
+            buttonMasterOnOffToggle.setText(getString(R.string.start));
         }
         buttonMasterOnOffToggle.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -97,6 +101,39 @@ public class MainActivity extends SherlockActivity
                 }
             }
         });
+
+        try {
+            mApplication.mCamera = Camera.open(); // attempt to get a Camera instance
+
+            // Create our Preview view and set it as the content of our activity.
+            mPreview = new CameraPreview(this, mApplication.mCamera);
+            FrameLayout preview = (FrameLayout)findViewById(R.id.cameraPreview);
+            preview.addView(mPreview);
+        }
+        catch (Exception e){
+            // [FIXME: how should this be handled?]
+            Log.i(MeerkatApplication.TAG,  "Could not open camera... stopping.");
+        }
+
+        /*
+        mPictureCallback = new PictureCallback() {
+            @Override
+            public void onPictureTaken(byte[] data, Camera camera) {
+                Log.i(MeerkatApplication.TAG, "mPictureCallback: " + data.length);
+                mApplication.mCamera.startPreview();
+            }
+        };
+
+        Button buttonCameraCapture = (Button)findViewById(R.id.buttonCameraCapture);
+        buttonCameraCapture.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Log.d(MeerkatApplication.TAG, "Main.buttonCameraCapture clicked");
+
+                mApplication.mCamera.takePicture(null, null, mPictureCallback);
+            }
+        });
+        */
     }
 
     @Override

@@ -54,16 +54,16 @@ public class BluetoothScanDataSource extends AbstractPeriodicDataSource
             mBluetoothAdapter.cancelDiscovery();
         }
         if (mReceiver != null) {
-            mContext.unregisterReceiver(mReceiver);
+            mApplication.unregisterReceiver(mReceiver);
         }
         super.stop();
     }
 
     @Override
-    public boolean init(Context context)
+    public boolean init(MeerkatApplication application)
     {
         Log.i(MeerkatApplication.TAG,  "BluetoothScanDataSource.init");
-        super.init(context);
+        super.init(application);
 
         BluetoothAdapter mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
         if (!mBluetoothAdapter.isEnabled()) {
@@ -94,7 +94,7 @@ public class BluetoothScanDataSource extends AbstractPeriodicDataSource
         };
 
         // Register the BroadcastReceiver
-        mContext.registerReceiver(mReceiver,
+        mApplication.registerReceiver(mReceiver,
                 new IntentFilter(BluetoothDevice.ACTION_FOUND));
 
         return true;
