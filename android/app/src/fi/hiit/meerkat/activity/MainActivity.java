@@ -78,10 +78,10 @@ public class MainActivity extends SherlockActivity
         Button buttonMasterOnOffToggle =
             (Button)findViewById(R.id.buttonMasterOnOffToggle);
         if (mApplication.isActive()) {
-            ((Button)view).setText(getString(R.string.start));
+            buttonMasterOnOffToggle.setText(getString(R.string.start));
         }
         else {
-            ((Button)view).setText(getString(R.string.stop));
+            buttonMasterOnOffToggle.setText(getString(R.string.stop));
         }
         buttonMasterOnOffToggle.setOnClickListener(new View.OnClickListener() {
             @Override
