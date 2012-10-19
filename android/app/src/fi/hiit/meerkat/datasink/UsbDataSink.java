@@ -45,6 +45,13 @@ public class UsbDataSink implements IDataSink
     }
 
     @Override
+    public synchronized void write(byte channelId, String data)
+            throws DataSinkPacketTooBigException
+    {
+        write(channelId, data.getBytes());
+    }
+
+    @Override
     public synchronized void write(byte channelId, byte[] data)
             throws DataSinkPacketTooBigException
     {

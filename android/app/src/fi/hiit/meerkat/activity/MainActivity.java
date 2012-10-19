@@ -44,8 +44,6 @@ public class MainActivity extends SherlockActivity
 
     private MeerkatApplication mApplication;
     private UsbDataSink mDataSink;
-    private boolean mActive;
-
 
     /** Called when the activity is first created. */
     @Override
@@ -55,7 +53,6 @@ public class MainActivity extends SherlockActivity
         setContentView(R.layout.main);
 
         mApplication = (MeerkatApplication)getApplication();
-        mActive = false;
 
         setupUi();
 
@@ -66,24 +63,31 @@ public class MainActivity extends SherlockActivity
     {
         Intent intent = new Intent(this, MeerkatService.class);
         startService(intent);
-        mActive = true;
+        mApplication.setActive(true);
     }
     private void stop()
     {
         Intent intent = new Intent(this, MeerkatService.class);
         stopService(intent);
-        mActive = false;
+        mApplication.setActive(false);
     }
 
 
     private void setupUi()
     {
-        Button buttonMasterOnOffToggle = (Button)findViewById(R.id.buttonMasterOnOffToggle);
+        Button buttonMasterOnOffToggle =
+            (Button)findViewById(R.id.buttonMasterOnOffToggle);
+        if (mApplication.isActive()) {
+            ((Button)view).setText(getString(R.string.start));
+        }
+        else {
+            ((Button)view).setText(getString(R.string.stop));
+        }
         buttonMasterOnOffToggle.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 Log.d(MeerkatApplication.TAG, "Main.buttonMasterOnOffToggle clicked");
-                if (mActive) {
+                if (mApplication.isActive()) {
                     stop();
                     ((Button)view).setText(getString(R.string.start));
                 }

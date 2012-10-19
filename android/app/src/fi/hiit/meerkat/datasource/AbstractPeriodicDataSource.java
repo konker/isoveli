@@ -28,11 +28,14 @@ public abstract class AbstractPeriodicDataSource implements IDataSource
         mTickLock = false;
     }
 
-    public void init(Context context) {
-        mContext = context;
-    }
-
+    // this is where the main work happens
     public abstract void tick();
+
+    @Override
+    public boolean init(Context context) {
+        mContext = context;
+        return true;
+    }
 
     @Override
     public void start()
@@ -53,8 +56,12 @@ public abstract class AbstractPeriodicDataSource implements IDataSource
                 if (!mTickLock) {
                     mTickLock = true;
 
-                    // execute the main task of the thread
-                    tick();
+                    // [FIXME: is there a better way to protect against mRun
+                    // being unset during sleep?]
+                    if (mRun) {
+                        // execute the main task of the thread
+                        tick();
+                    }
 
                     mTickLock = false;
                 }

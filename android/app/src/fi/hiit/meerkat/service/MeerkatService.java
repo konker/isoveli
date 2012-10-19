@@ -35,7 +35,8 @@ public class MeerkatService extends Service
     private MeerkatApplication mApplication;
     private IDataSink mSink;
     //protected HashMap<String, IDataSource> sources;
-    private WifiScanDataSource mSource2;
+    private WifiScanDataSource mSource1;
+    private BluetoothScanDataSource mSource2;
 
     @Override
     public void onCreate()
@@ -57,7 +58,7 @@ public class MeerkatService extends Service
 
         // Notification with app icon
         Notification notification =
-            new Notification(R.drawable.ic_launcher, getText(R.string.app_name),
+            new Notification(R.drawable.ic_service, getText(R.string.app_name),
                              System.currentTimeMillis());
         // clicking notification opens MainActivity
         Intent notificationIntent = new Intent(this, MainActivity.class);
@@ -96,12 +97,19 @@ public class MeerkatService extends Service
     private void initSources()
     {
         mSource1 = new WifiScanDataSource(mSink, (byte)0x20, 10000);
-        mSource1.init(this);
-        mSource1.start();
+        if (mSource1.init(this)) {
+            mSource1.start();
+        }
+
+        mSource2 = new BluetoothScanDataSource(mSink, (byte)0x30, 10000);
+        if (mSource2.init(this)) {
+            mSource2.start(); 
+        }
     }
     private void closeSources()
     {
         mSource1.stop();
+        mSource2.stop();
     }
 
     @Override

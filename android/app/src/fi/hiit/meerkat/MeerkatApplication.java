@@ -18,15 +18,17 @@ public class MeerkatApplication extends Application implements OnSharedPreferenc
 
     private SharedPreferences mPrefs;
     private SharedPreferences.Editor mEditor;
+    private boolean mActive;
 
     @Override
     public void onCreate()
     {
         super.onCreate();
 
-        this.mPrefs = PreferenceManager.getDefaultSharedPreferences(this);
-        this.mEditor = mPrefs.edit();
-        this.mPrefs.registerOnSharedPreferenceChangeListener(this);
+        mActive = false;
+        mPrefs = PreferenceManager.getDefaultSharedPreferences(this);
+        mEditor = mPrefs.edit();
+        mPrefs.registerOnSharedPreferenceChangeListener(this);
 
         Log.d(MeerkatApplication.TAG, "App.onCreate");
     }
@@ -37,6 +39,15 @@ public class MeerkatApplication extends Application implements OnSharedPreferenc
         super.onTerminate();
 
         Log.i(MeerkatApplication.TAG, "App.onTerminate");
+    }
+
+    public boolean isActive()
+    {
+        return mActive;
+    }
+    public void setActive(boolean active)
+    {
+        mActive = active;
     }
 
     public SharedPreferences getPrefs()

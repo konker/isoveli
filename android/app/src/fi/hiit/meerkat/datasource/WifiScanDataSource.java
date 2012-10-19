@@ -1,6 +1,7 @@
 package fi.hiit.meerkat.datasource;
 
 import java.util.List;    
+import java.util.ArrayList;
 
 import android.util.Log;
 import android.content.Context;
@@ -22,6 +23,7 @@ public class WifiScanDataSource extends AbstractPeriodicDataSource
 {
     private WifiManager mWifiManager;
     private BroadcastReceiver mReceiver;
+    private List<ScanResult> mResults;
     private Gson mGson;
 
     public WifiScanDataSource(IDataSink sink, byte channelId, int periodMs)
@@ -45,12 +47,16 @@ public class WifiScanDataSource extends AbstractPeriodicDataSource
     @Override
     public void stop()
     {
+        Log.i(MeerkatApplication.TAG,  "WifiScanDataSource.stop");
+
         mContext.unregisterReceiver(mReceiver);
         super.stop();
     }
 
-    public void init(Context context)
+    @Override
+    public boolean init(Context context)
     {
+        Log.i(MeerkatApplication.TAG,  "WifiScanDataSource.init");
         super.init(context);
 
         mWifiManager = (WifiManager)mContext.getSystemService(Context.WIFI_SERVICE);
@@ -63,29 +69,44 @@ public class WifiScanDataSource extends AbstractPeriodicDataSource
         mReceiver = new BroadcastReceiver() {
             @Override
             public void onReceive(Context c, Intent intent) {
-                List<ScanResult> results = mWifiManager.getScanResults();
-                // [TODO: serialze results to JSON]
-                String json = mGson.toJson(results);  
-                Log.d(MeerkatApplication.TAG, json);
-                // [TODO: write to sink]
+                String action = intent.getAction();
+                // When scan is ready
+                if (WifiManager.SCAN_RESULTS_AVAILABLE_ACTION.equals(action)) {
+                    mResults = mWifiManager.getScanResults();
+                }
             }
         };
         mContext.registerReceiver(mReceiver,
                 new IntentFilter(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION));
+
+        return true;
     }
 
     @Override
     public void tick()
     {
+        Log.i(MeerkatApplication.TAG,  "WifiScanDataSource.tick");
+        if (mResults != null) {
+
+            // serialize results to JSON
+            String json = mGson.toJson(mResults);  
+
+            // write JSON to data sink
+            try {
+                mSink.write(mChannelId, json);
+            }
+            catch (DataSinkPacketTooBigException ex) {
+                Log.e(MeerkatApplication.TAG, "Packet too big. Dropping.");
+            }
+
+            // reset results
+            mResults.clear();
+        }
+        else {
+            Log.i(MeerkatApplication.TAG, "WifiScanDataSource.tick: NULL results.");
+        }
+
         mWifiManager.startScan();
-        /*
-        try {
-            mSink.write(mChannelId, payload);
-        }
-        catch (DataSinkPacketTooBigException ex) {
-            Log.e(MeerkatApplication.TAG, "Packet too big. Dropping.");
-        }
-        */
     }
 }
 

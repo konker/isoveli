@@ -22,6 +22,13 @@ public class LogDataSink implements IDataSink
     public void close() { }
 
     @Override
+    public synchronized void write(byte channelId, String data)
+            throws DataSinkPacketTooBigException
+    {
+        write(channelId, data.getBytes());
+    }
+
+    @Override
     public void write(byte channelId, byte[] data)
     {
         String payload = channelId + (new String(data));
