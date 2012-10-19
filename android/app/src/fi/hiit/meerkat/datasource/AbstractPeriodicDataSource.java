@@ -2,6 +2,8 @@ package fi.hiit.meerkat.datasource;
 
 import java.lang.Thread;
 import android.util.Log;
+import android.content.Context;
+
 import fi.hiit.meerkat.MeerkatApplication;
 import fi.hiit.meerkat.datasink.IDataSink;
 
@@ -14,6 +16,8 @@ public abstract class AbstractPeriodicDataSource implements IDataSource
     protected IDataSink mSink;
     protected int mPeriodMs;
     protected boolean mRun;
+    protected boolean mTickLock;
+    protected Context mContext;
 
     public AbstractPeriodicDataSource(IDataSink sink, byte channelId, int periodMs)
     {
@@ -21,6 +25,11 @@ public abstract class AbstractPeriodicDataSource implements IDataSource
         mChannelId = channelId;
         mSink = sink;
         mRun = true;
+        mTickLock = false;
+    }
+
+    public void init(Context context) {
+        mContext = context;
     }
 
     public abstract void tick();
@@ -29,6 +38,7 @@ public abstract class AbstractPeriodicDataSource implements IDataSource
     public void start()
     {
         mRun = true;
+        mTickLock = false;
         mThread = new Thread(this);
         mThread.start();
         Log.i(MeerkatApplication.TAG, "AbstractPeriodicDataSource.start");
@@ -40,8 +50,14 @@ public abstract class AbstractPeriodicDataSource implements IDataSource
         Log.i(MeerkatApplication.TAG, "AbstractPeriodicDataSource.run");
         try {
             while (mRun) {
-                // execute the main task of the thread
-                tick();
+                if (!mTickLock) {
+                    mTickLock = true;
+
+                    // execute the main task of the thread
+                    tick();
+
+                    mTickLock = false;
+                }
 
                 // sleep for mPeriodMs milliseconds
                 Thread.sleep(mPeriodMs);

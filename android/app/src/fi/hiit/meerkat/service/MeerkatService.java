@@ -35,7 +35,7 @@ public class MeerkatService extends Service
     private MeerkatApplication mApplication;
     private IDataSink mSink;
     //protected HashMap<String, IDataSource> sources;
-    private DummyDataSource mSource1, mSource2;
+    private WifiScanDataSource mSource2;
 
     @Override
     public void onCreate()
@@ -95,16 +95,13 @@ public class MeerkatService extends Service
 
     private void initSources()
     {
-        mSource1 = new DummyDataSource(mSink, (byte)0x10, 1000);
+        mSource1 = new WifiScanDataSource(mSink, (byte)0x20, 10000);
+        mSource1.init(this);
         mSource1.start();
-
-        mSource2 = new DummyDataSource(mSink, (byte)0x20, 2000);
-        mSource2.start();
     }
     private void closeSources()
     {
         mSource1.stop();
-        mSource2.stop();
     }
 
     @Override

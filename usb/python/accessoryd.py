@@ -80,7 +80,6 @@ class Accessory():
         while(True):
             try:
                 data = self.epIn.read(PACKET_MAX_BYTES, timeout=0)
-                print "|%s|" % data;
                 channel_id = data.pop(0)
                 self.storage.write_array(channel_id, data)
             except usb.core.USBError as ex1:
@@ -88,13 +87,11 @@ class Accessory():
                 logging.error("USB connection error: %s. Exiting." % ex1)
                 self.close()
                 sys.exit(100)
-            #except Exception as ex2:
+            except Exception as ex2:
                 # [TODO: what should happen here?]
-                #logging.debug("SLEEPING %s" % ex)
-                #time.sleep(1)
-            #    logging.error("Error with I/O: %s. Exiting." % ex2)
-            #    self.close()
-            #    sys.exit(101)
+                logging.error("Error with I/O: %s. Exiting." % ex2)
+                self.close()
+                sys.exit(101)
 
 
     def close(self):
@@ -245,10 +242,10 @@ if __name__ == '__main__':
             logging.info("Keyboard interrupt. Exiting.")
             accessory.close()
             sys.exit(-1)
-        #except Exception as ex1:
-        #    logging.error("Error running accessory: %s. Exiting." % ex1)
-        #    accessory.close()
-        #    sys.exit(-2)
+        except Exception as ex1:
+            logging.error("Error running accessory: %s. Exiting." % ex1)
+            accessory.close()
+            sys.exit(-2)
     else:
         try:
             accessory = Accessory()
@@ -257,9 +254,9 @@ if __name__ == '__main__':
         except runner.DaemonRunnerStopFailureError as ex1:
             logging.error("Could not stop: %s." % ex1)
             sys.exit(-1)
-        #except Exception as ex2:
-        #    logging.error("Error running accessory: %s. Exiting." % ex2)
-        #    accessory.close()
-        #    sys.exit(-2)
+        except Exception as ex2:
+            logging.error("Error running accessory: %s. Exiting." % ex2)
+            accessory.close()
+            sys.exit(-2)
 
 
