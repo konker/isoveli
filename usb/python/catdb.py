@@ -20,7 +20,14 @@ def main():
     writer = csv.writer(sys.stdout)
     storage = Storage(config['datafile'])
     for r in storage.reader():
-        writer.writerow(r)
+        if r[0] == 0x40:
+            # camera
+            fname ="%s-%s.jpg" % (r[0], r[1]) 
+            with open(fname, 'w') as f:
+                f.write(r[3])
+            print "wrote: %s" % fname
+        else:
+            writer.writerow(r)
 
 
 if __name__ == '__main__':

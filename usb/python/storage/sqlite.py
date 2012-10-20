@@ -46,7 +46,7 @@ class Storage(BaseStorage):
         timestamp = time.time()
         length    = len(s)
 
-        self.buffer.append((channel_id, timestamp, length, s))
+        self.buffer.append((channel_id, timestamp, length, sqlite3.Binary(s)))
         if (len(self.buffer) >= self.buffer_size):
             self.cursor.executemany('''INSERT into accessory_data (channel_id, timestamp, length, data)
                                        VALUES (?, ?, ?, ?)''',

@@ -61,7 +61,7 @@ public abstract class AbstractPeriodicUIDataSource implements IDataSource
             Log.i(MeerkatApplication.TAG, "AbstractPeriodicUIDataSource.WaitTask.doInBackground: " + periodMs[0].intValue());
             try {
                 Log.i(MeerkatApplication.TAG, "AbstractPeriodicUIDataSource: task: BEFORE SLEEP"); 
-                Thread.sleep(100);
+                Thread.sleep(5000);
                 Log.i(MeerkatApplication.TAG, "AbstractPeriodicUIDataSource: task: AFTER SLEEP"); 
             }
             catch(InterruptedException ex) {
@@ -79,7 +79,6 @@ public abstract class AbstractPeriodicUIDataSource implements IDataSource
             }
         }
     }
-
 }
 
 

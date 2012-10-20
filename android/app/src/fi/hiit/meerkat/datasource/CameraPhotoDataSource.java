@@ -11,15 +11,12 @@ import android.widget.FrameLayout;
 import fi.hiit.meerkat.MeerkatApplication;
 import fi.hiit.meerkat.datasink.IDataSink;
 import fi.hiit.meerkat.datasink.DataSinkPacketTooBigException;
-//import fi.hiit.meerkat.view.CameraPreview;
 import fi.hiit.meerkat.R;
 
 /**
  */
 public class CameraPhotoDataSource extends AbstractPeriodicUIDataSource
 {
-    //private Camera mCamera;
-    //private CameraPreview mPreview;
     private PictureCallback mPictureCallback;
     private byte[] mResult;
 
@@ -44,10 +41,6 @@ public class CameraPhotoDataSource extends AbstractPeriodicUIDataSource
     public void stop()
     {
         Log.i(MeerkatApplication.TAG,  "CameraPhotoDataSource.stop");
-
-        // if (mCamera != null) {
-        //    mCamera.release();
-        //}
         super.stop();
     }
 
@@ -64,24 +57,6 @@ public class CameraPhotoDataSource extends AbstractPeriodicUIDataSource
             stop();
             return false;
         }
-        
-        //try {
-        //    mCamera = Camera.open(); // attempt to get a Camera instance
-
-            /*
-            // Create our Preview view and set it as the content of our activity.
-            mPreview = new CameraPreview(mApplication, mCamera);
-            FrameLayout preview = (FrameLayout)mApplication.findViewById(R.id.cameraPreview);
-            preview.addView(mPreview);
-            */
-
-        //}
-        //catch (Exception e){
-            // [FIXME: how should this be handled?]
-        //    Log.i(MeerkatApplication.TAG,  "Could not open camera... stopping.");
-        //    stop();
-        //    return false;
-        //}
 
         mPictureCallback = new PictureCallback() {
             @Override

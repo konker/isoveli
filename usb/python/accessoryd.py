@@ -82,6 +82,7 @@ class Accessory():
                 data = self.epIn.read(PACKET_MAX_BYTES, timeout=0)
                 channel_id = data.pop(0)
                 self.storage.write_array(channel_id, data)
+                logging.debug("Wrote/%s: %s bytes" % (channel_id, len(data)))
             except usb.core.USBError as ex1:
                 # [TODO: could we try to re-connect here?]
                 logging.error("USB connection error: %s. Exiting." % ex1)

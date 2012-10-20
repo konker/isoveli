@@ -1,28 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:orientation="vertical"
-    android:layout_width="fill_parent"
-    android:layout_height="fill_parent"
+    style="@style/Screen"
     >
     <Button
         android:id="@+id/buttonMasterOnOffToggle"
-        android:layout_width="fill_parent"
-        android:layout_height="wrap_content"
         android:text="@string/start"
+        style="@style/MainButton"
         />
     <FrameLayout
         android:id="@+id/cameraPreview"
-        android:layout_width="fill_parent"
-        android:layout_height="fill_parent"
-        android:layout_weight="1"
+        style="@style/CameraPreview"
         />
-    <!--
-    <Button
-        android:id="@+id/buttonCameraCapture"
-        android:layout_width="fill_parent"
-        android:layout_height="wrap_content"
-        android:text="@string/capture"
-        />
-    -->
 </LinearLayout>
 
