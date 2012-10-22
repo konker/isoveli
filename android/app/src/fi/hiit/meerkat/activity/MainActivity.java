@@ -29,13 +29,6 @@ import java.lang.Runnable;
 import java.lang.Thread;
 import java.lang.InterruptedException;
 
-/*
-import com.actionbarsherlock.view.Menu;
-import com.actionbarsherlock.view.MenuItem;
-import com.actionbarsherlock.view.MenuInflater;
-import com.actionbarsherlock.app.SherlockActivity;
-*/
-
 import fi.hiit.meerkat.R;
 import fi.hiit.meerkat.MeerkatApplication;
 import fi.hiit.meerkat.service.MeerkatService;
