@@ -2,14 +2,37 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     style="@style/Screen"
     >
-    <Button
-        android:id="@+id/buttonMasterOnOffToggle"
-        android:text="@string/start"
-        style="@style/MainButton"
-        />
-    <FrameLayout
-        android:id="@+id/cameraPreview"
-        style="@style/CameraPreview"
-        />
+
+    <LinearLayout
+        android:layout_width="260dp"
+        android:layout_height="fill_parent"
+        android:orientation="vertical"
+        >
+
+		    <FrameLayout
+		        android:id="@+id/cameraPreview"
+		        style="@style/CameraPreview"
+		        android:layout_width="fill_parent"
+		        android:layout_height="195dp" 
+		        />
+		    
+		        <Button
+		            android:id="@+id/buttonMasterOnOffToggle"
+		            style="@style/MainButton"
+		            android:text="@string/start" />
+    </LinearLayout>
+	
+    <!-- 
+    <ScrollView
+        android:id="@+id/scrollView1"
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent" >
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" >
+        </LinearLayout>
+    </ScrollView>
+-->
 </LinearLayout>
 

@@ -3,7 +3,7 @@
     package="fi.hiit.meerkat"
     android:versionCode="1"
     android:versionName="1.0"
-    android:screenOrientation="portrait"
+    android:screenOrientation="landscape"
     >
     <uses-sdk android:minSdkVersion="14" android:targetSdkVersion="18"/>
 

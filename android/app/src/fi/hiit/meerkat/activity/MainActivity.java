@@ -156,7 +156,7 @@ public class MainActivity extends Activity
             mApplication.mCamera = Camera.open();
 
             // set the camera into portrait orientation
-            mApplication.mCamera.setDisplayOrientation(90);
+            //mApplication.mCamera.setDisplayOrientation(90);
 
             // Create our Preview view and set it as the content of our activity.
             mPreview = new CameraPreview(this, mApplication.mCamera);
