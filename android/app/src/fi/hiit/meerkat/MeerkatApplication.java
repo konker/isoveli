@@ -10,6 +10,8 @@ import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
 import android.preference.PreferenceManager;
 import android.hardware.Camera;
 
+import fi.hiit.meerkat.usb.UsbController;
+
 /**
   */
 public class MeerkatApplication extends Application implements OnSharedPreferenceChangeListener
@@ -20,6 +22,7 @@ public class MeerkatApplication extends Application implements OnSharedPreferenc
     private SharedPreferences mPrefs;
     private SharedPreferences.Editor mEditor;
     private boolean mActive;
+    private UsbController mUsbController;
     public Camera mCamera; // [FIXME: public]
 
     @Override
@@ -31,6 +34,8 @@ public class MeerkatApplication extends Application implements OnSharedPreferenc
         mPrefs = PreferenceManager.getDefaultSharedPreferences(this);
         mEditor = mPrefs.edit();
         mPrefs.registerOnSharedPreferenceChangeListener(this);
+        mUsbController = new UsbController(this);
+        mUsbController.start();
 
         Log.d(MeerkatApplication.TAG, "App.onCreate");
     }
@@ -39,6 +44,8 @@ public class MeerkatApplication extends Application implements OnSharedPreferenc
     public void onTerminate()
     {
         super.onTerminate();
+        mUsbController.stop();
+
         if (mCamera != null) {
             mCamera.release();
         }
