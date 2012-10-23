@@ -1,7 +1,7 @@
 package fi.hiit.meerkat.protocol;
 
 import java.util.List;
-import java.util.ListArray;
+import java.util.ArrayList;
 
 import fi.hiit.meerkat.MeerkatApplication;
 
@@ -10,7 +10,6 @@ import fi.hiit.meerkat.MeerkatApplication;
 // [TODO:  does this need a base class/interface?]
 public class UsbProtocol
 {
-    private MeerkatApplication mApplication;
     //private List<ICommand> mHistory();
 
     /**
@@ -23,16 +22,16 @@ public class UsbProtocol
     public static ICommand createCommand(byte[] raw)
     {
         String s = new String(raw);
-        switch (s) {
-            case "START":
-                return new StartCommand();
-            case "STOP":
-                return new StopCommand();
+        if (s.equals("START")) {
+            return new StartCommand();
+        }
+        else if (s.equals("STOP")) {
+            return new StopCommand();
         }
         return null;
     }
 
-    public UsbProtocol(mApplication application)
+    public UsbProtocol()
     {
         //[FIXME: do we need to store history?]
         //mHistory = new ArrayList<ICommand>();
@@ -47,7 +46,7 @@ public class UsbProtocol
     {
         //mHistory.add(command);
         if (command != null) {
-            command.execute(mApplication);
+            command.execute();
         }
     }
 }

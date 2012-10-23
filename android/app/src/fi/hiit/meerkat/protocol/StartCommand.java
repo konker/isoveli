@@ -6,10 +6,9 @@ import fi.hiit.meerkat.MeerkatApplication;
   */
 public class StartCommand implements ICommand
 {
-    public void execute(MeerkatApplication application)
+    public void execute()
     {
-        //[TODO]
-        application.start();
+        MeerkatApplication.getInstance().start();
     }
 }
 

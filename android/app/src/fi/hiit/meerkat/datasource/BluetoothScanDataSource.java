@@ -30,6 +30,7 @@ public class BluetoothScanDataSource extends AbstractPeriodicDataSource
     public BluetoothScanDataSource(IDataSink sink, byte channelId, int periodMs)
     {
         super(sink, channelId, periodMs);
+        Log.d(MeerkatApplication.TAG, "BluetoothScanDataSource.ctor");
         mGson = new Gson();
     }
 
@@ -46,24 +47,32 @@ public class BluetoothScanDataSource extends AbstractPeriodicDataSource
     }
 
     @Override
+    public void start()
+    {
+        Log.d(MeerkatApplication.TAG,  "BluetoothScanDataSource.start");
+        if (init()) {
+            super.start();
+        }
+    }
+
+    @Override
     public void stop()
     {
-        Log.i(MeerkatApplication.TAG,  "BluetoothScanDataSource.stop");
+        Log.d(MeerkatApplication.TAG, "BluetoothScanDataSource.stop");
 
         if (mBluetoothAdapter != null) {
             mBluetoothAdapter.cancelDiscovery();
         }
         if (mReceiver != null) {
-            mApplication.unregisterReceiver(mReceiver);
+            MeerkatApplication.getInstance().unregisterReceiver(mReceiver);
+            mReceiver = null;
         }
         super.stop();
     }
 
-    @Override
-    public boolean init(MeerkatApplication application)
+    public boolean init()
     {
-        Log.i(MeerkatApplication.TAG,  "BluetoothScanDataSource.init");
-        super.init(application);
+        Log.d(MeerkatApplication.TAG,  "BluetoothScanDataSource.init");
 
         BluetoothAdapter mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
         if (!mBluetoothAdapter.isEnabled()) {
@@ -94,16 +103,15 @@ public class BluetoothScanDataSource extends AbstractPeriodicDataSource
         };
 
         // Register the BroadcastReceiver
-        mApplication.registerReceiver(mReceiver,
+        MeerkatApplication.getInstance().registerReceiver(mReceiver,
                 new IntentFilter(BluetoothDevice.ACTION_FOUND));
-
         return true;
     }
 
     @Override
     public void tick()
     {
-        Log.i(MeerkatApplication.TAG,  "BluetoothScanDataSource.tick");
+        Log.d(MeerkatApplication.TAG,  "BluetoothScanDataSource.tick");
         BluetoothAdapter mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
         if (mResults != null) {
             mBluetoothAdapter.cancelDiscovery();

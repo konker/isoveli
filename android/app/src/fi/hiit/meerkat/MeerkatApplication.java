@@ -10,6 +10,7 @@ import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
 import android.preference.PreferenceManager;
 import android.hardware.Camera;
 
+import fi.hiit.meerkat.datasource.*;
 import fi.hiit.meerkat.usb.UsbController;
 
 /**
@@ -18,38 +19,53 @@ public class MeerkatApplication extends Application implements OnSharedPreferenc
 {
     public static final String TAG = "MEERKAT";
     public static final String ERROR_TAG = "MEERKAT:ERROR";
+    private static MeerkatApplication instance;
 
     private SharedPreferences mPrefs;
     private SharedPreferences.Editor mEditor;
-    private boolean mActive;
+
     private UsbController mUsbController;
+    private HashMap<String, IDataSource> mSources;
+
+    private boolean mActive;
     public Camera mCamera; // [FIXME: public]
+
+    public static MeerkatApplication getInstance()
+    {
+        return instance;
+    }
 
     @Override
     public void onCreate()
     {
+        Log.d(MeerkatApplication.TAG, "Application.onCreate");
         super.onCreate();
+
+        instance = this;
 
         mActive = false;
         mPrefs = PreferenceManager.getDefaultSharedPreferences(this);
         mEditor = mPrefs.edit();
         mPrefs.registerOnSharedPreferenceChangeListener(this);
-        mUsbController = new UsbController(this);
-        mUsbController.start();
 
-        Log.d(MeerkatApplication.TAG, "App.onCreate");
+        mUsbController = new UsbController();
+        mUsbController.open(this);
+
+        initSources();
     }
 
     @Override
     public void onTerminate()
     {
+        Log.i(MeerkatApplication.TAG, "App.onTerminate");
         super.onTerminate();
-        mUsbController.stop();
+        stopSources();
+
+        mUsbController.close();
 
         if (mCamera != null) {
             mCamera.release();
         }
-        Log.i(MeerkatApplication.TAG, "App.onTerminate");
     }
 
     public boolean isActive()
@@ -59,6 +75,53 @@ public class MeerkatApplication extends Application implements OnSharedPreferenc
     public void setActive(boolean active)
     {
         mActive = active;
+    }
+
+    public void initSources()
+    {
+        Log.i(MeerkatApplication.TAG, "Application.initSources");
+        mSources = new HashMap<String, IDataSource>();
+
+        mSources.put("WifiScanDataSource",
+                new WifiScanDataSource(mUsbController, (byte)0x20, 10000));
+
+        mSources.put("BluetoothScanDataSource",
+                new BluetoothScanDataSource(mUsbController, (byte)0x30, 10000));
+
+        mSources.put("CameraPhotoDataSource",
+                new CameraPhotoDataSource(mUsbController, (byte)0x40, 5000));
+
+        /*
+        mSources.put("DummyDataSource",
+                new DummyDataSource(mUsbController, (byte)0x01, 2000));
+                */
+    }
+
+    public void start()
+    {
+        Log.i(MeerkatApplication.TAG, "Application.start");
+        startSources();
+        mActive = true;
+    }
+    public void stop()
+    {
+        Log.i(MeerkatApplication.TAG, "Application.stop");
+        stopSources();
+        mActive = false;
+    }
+
+    public void startSources()
+    {
+        for (IDataSource source : mSources.values()) {
+            source.start();
+        }
+    }
+
+    public void stopSources()
+    {
+        for (IDataSource source : mSources.values()) {
+            source.stop();
+        }
     }
 
     public SharedPreferences getPrefs()
@@ -71,6 +134,7 @@ public class MeerkatApplication extends Application implements OnSharedPreferenc
     }
 
     /* methods required by OnSharedPreferenceChangeListener */
+    @Override
     public synchronized void onSharedPreferenceChanged(SharedPreferences prefs, String key)
     {
         //[TODO]

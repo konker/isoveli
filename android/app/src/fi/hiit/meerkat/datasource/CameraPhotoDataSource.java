@@ -23,6 +23,7 @@ public class CameraPhotoDataSource extends AbstractPeriodicUIDataSource
     public CameraPhotoDataSource(IDataSink sink, byte channelId, int periodMs)
     {
         super(sink, channelId, periodMs);
+        Log.d(MeerkatApplication.TAG, "CameraPhotoDataSource.ctor");
     }
 
     @Override
@@ -38,19 +39,27 @@ public class CameraPhotoDataSource extends AbstractPeriodicUIDataSource
     }
 
     @Override
-    public void stop()
+    public void start()
     {
-        Log.i(MeerkatApplication.TAG,  "CameraPhotoDataSource.stop");
-        super.stop();
+        Log.d(MeerkatApplication.TAG,  "CameraPhotoDataSource.start");
+        if (init()) {
+            super.start();
+        }
     }
 
     @Override
-    public boolean init(MeerkatApplication application)
+    public void stop()
     {
-        Log.i(MeerkatApplication.TAG,  "CameraPhotoDataSource.init");
-        super.init(application);
+        Log.d(MeerkatApplication.TAG,  "CameraPhotoDataSource.stop");
+        super.stop();
+    }
 
-        if (!mApplication.getPackageManager().hasSystemFeature(PackageManager.FEATURE_CAMERA)){
+    public boolean init()
+    {
+        Log.d(MeerkatApplication.TAG,  "CameraPhotoDataSource.init");
+
+        MeerkatApplication application = MeerkatApplication.getInstance();
+        if (!application.getPackageManager().hasSystemFeature(PackageManager.FEATURE_CAMERA)){
             // no camera on this device
             // [FIXME: how should this be handled?]
             Log.i(MeerkatApplication.TAG,  "No camera support... stopping.");
@@ -63,17 +72,16 @@ public class CameraPhotoDataSource extends AbstractPeriodicUIDataSource
             public void onPictureTaken(byte[] data, Camera camera) {
                 Log.i(MeerkatApplication.TAG, "CameraPhotoDataSource.mPictureCallback: " + data.length);
                 mResult = data;
-                mApplication.mCamera.startPreview();
+                MeerkatApplication.getInstance().mCamera.startPreview();
             }
         };
-
         return true;
     }
 
     @Override
     public void tick()
     {
-        Log.i(MeerkatApplication.TAG,  "CameraPhotoDataSource.tick");
+        Log.d(MeerkatApplication.TAG,  "CameraPhotoDataSource.tick");
         if (mResult != null) {
             // write JSON to data sink
             try {
@@ -91,7 +99,7 @@ public class CameraPhotoDataSource extends AbstractPeriodicUIDataSource
         }
 
         try {
-            mApplication.mCamera.takePicture(null, null, mPictureCallback);
+            MeerkatApplication.getInstance().mCamera.takePicture(null, null, mPictureCallback);
         }
         catch (Exception ex) {
             Log.i(MeerkatApplication.TAG, "CameraPhotoDataSource.tick: takePicture failed: " + ex);

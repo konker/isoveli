@@ -1,5 +1,7 @@
 package fi.hiit.meerkat.usb;
 
+import java.lang.Runnable;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.FileDescriptor;
@@ -11,26 +13,30 @@ import android.hardware.usb.UsbAccessory;
 import android.content.Context;
 
 import fi.hiit.meerkat.MeerkatApplication;
-import fi.hiit.meerkat.datasink.IDataSink;
+import fi.hiit.meerkat.datasink.*;
 import fi.hiit.meerkat.protocol.UsbProtocol;
 
 
 /**
  */
-public class UsbController implements IDataSink
+public class UsbController implements IDataSink, Runnable
 {
+    //[FIXME: maybe could be larger]
+    public static final int MAX_IN_PACKET_SIZE = 1024;
+
     private ParcelFileDescriptor mFileDescriptor;
     private FileOutputStream mOutputStream;
     private FileInputStream mInputStream;
     private UsbProtocol mProtocol;
+    private Thread mListenThread;
     private boolean mActive;
     private boolean mListening;
     
-    public UsbController(MeerkatApplication application)
+    public UsbController()
     {
         mActive = false;
         mListening = false;
-        mProtocol = new UsbProtocol(application);
+        mProtocol = new UsbProtocol();
     }
 
     @Override
@@ -42,14 +48,16 @@ public class UsbController implements IDataSink
     @Override
     public void open(Context context)
     {
+        Log.d(MeerkatApplication.TAG, "UsbController.open");
         openAccessory(context);
-        startListener();
+        //startListener();
     }
 
     @Override
     public void close()
     {
-        stopListener();
+        Log.d(MeerkatApplication.TAG, "UsbController.close");
+        //stopListener();
         closeAccessory();
     }
 
@@ -99,11 +107,20 @@ public class UsbController implements IDataSink
         Log.i(MeerkatApplication.TAG, "UsbController.run");
         try {
             while (mListening) {
-                byte[] packet = mInputStream.read();
-                Log.d(MeerkatApplication.TAG, "UsbController.run: got packet: " + new String(packet));
+                // [FIXME: does this need to be re-initialized each time?]
+                byte[] packet = new byte[MAX_IN_PACKET_SIZE];
+                // [FIXME: should he storeAndExecute be inside try for IOException?]
+                try {
+                    if (mInputStream.read(packet, 0, MAX_IN_PACKET_SIZE) > 0) {
+                        Log.d(MeerkatApplication.TAG, "UsbController.run: got packet: " + new String(packet));
 
-                // Send to the protocol adapter to deal with
-                mProtocol.storeAndExecute(packet);
+                        // Send to the protocol adapter to deal with
+                        mProtocol.storeAndExecute(packet);
+                    }
+                }
+                catch (IOException ioe) {
+                    Log.i(MeerkatApplication.TAG, "UsbController: run: IOException: " + ioe); 
+                }
 
                 // [FIXME: do we need this?]
                 Thread.sleep(1000);
@@ -125,6 +142,7 @@ public class UsbController implements IDataSink
     // Helper methods
     private void openAccessory(Context context)
     {
+        Log.d(MeerkatApplication.TAG, "UsbController.openAccessory");
         UsbManager usbManager = (UsbManager)context.getSystemService(Context.USB_SERVICE);
         UsbAccessory[] accessoryList = usbManager.getAccessoryList();
         if (accessoryList != null && accessoryList.length > 0) {
@@ -136,19 +154,20 @@ public class UsbController implements IDataSink
             }
             else {
                 mActive = false;
-                Log.d(MeerkatApplication.TAG, "Service.openAccessory: Failed to open accessory: 1");
+                Log.d(MeerkatApplication.TAG, "UsbController.openAccessory: Failed to open accessory: 1");
             }
         }
         else {
             mActive = false;
-            Log.d(MeerkatApplication.TAG, "Service.openAccessory: Failed to open accessory: 2");
+            Log.d(MeerkatApplication.TAG, "UsbController.openAccessory: Failed to open accessory: 2");
         }
         mActive = true;
-        Log.d(MeerkatApplication.TAG, "Service.openAccessory");
+        Log.d(MeerkatApplication.TAG, "UsbController.openAccessory");
     }
 
     private void closeAccessory()
     {
+        Log.d(MeerkatApplication.TAG, "UsbController.closeAccessory");
         try {
             if (mOutputStream != null) {
                 mOutputStream.close();
@@ -161,10 +180,10 @@ public class UsbController implements IDataSink
             }
         }
         catch(IOException ex) {
-            Log.d(MeerkatApplication.TAG, "Service: Error closing streams: " + ex);
+            Log.d(MeerkatApplication.TAG, "UsbController: Error closing streams: " + ex);
         }
         mActive = false;
-        Log.d(MeerkatApplication.TAG, "Service.closeAccessory");
+        Log.d(MeerkatApplication.TAG, "UsbController.closeAccessory");
     }
 }
 

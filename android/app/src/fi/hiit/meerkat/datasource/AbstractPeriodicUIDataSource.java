@@ -20,6 +20,7 @@ public abstract class AbstractPeriodicUIDataSource implements IDataSource
 
     public AbstractPeriodicUIDataSource(IDataSink sink, byte channelId, int periodMs)
     {
+        Log.d(MeerkatApplication.TAG, "\tAbstractPeriodicUIDataSource.ctor");
         mPeriodMs = periodMs;
         mChannelId = channelId;
         mSink = sink;
@@ -31,38 +32,36 @@ public abstract class AbstractPeriodicUIDataSource implements IDataSource
     public abstract void tick();
 
     @Override
-    public boolean init(MeerkatApplication application) {
-        mApplication = application;
-        return true;
-    }
-    
-    @Override
     public void start()
     {
+        Log.d(MeerkatApplication.TAG, "\tAbstractPeriodicUIDataSource.start");
         mRun = true;
         mTickLock = false;
         new WaitTask().execute(mPeriodMs);
-        Log.i(MeerkatApplication.TAG, "AbstractPeriodicUIDataSource.start");
     }
 
     @Override
-    public void run() { /* [FIXME: nothing] */ }
+    public void run() { /* [Nothing. Using AsyncTask instead of Thread.] */ }
+
+    @Override
+    public boolean isRunning()
+    {
+        return mRun;
+    }
 
     @Override
     public void stop()
     {
+        Log.d(MeerkatApplication.TAG, "\tAbstractPeriodicUIDataSource.stop");
         mRun = false;
-        Log.i(MeerkatApplication.TAG, "AbstractPeriodicUIDataSource.stop");
     }
 
     protected class WaitTask extends AsyncTask<Integer, Void, Void> {
         protected Void doInBackground(Integer... periodMs)
         {
-            Log.i(MeerkatApplication.TAG, "AbstractPeriodicUIDataSource.WaitTask.doInBackground: " + periodMs[0].intValue());
+            Log.d(MeerkatApplication.TAG, "\tAbstractPeriodicUIDataSource.WaitTask.doInBackground: " + periodMs[0].intValue());
             try {
-                Log.i(MeerkatApplication.TAG, "AbstractPeriodicUIDataSource: task: BEFORE SLEEP"); 
                 Thread.sleep(periodMs[0].intValue());
-                Log.i(MeerkatApplication.TAG, "AbstractPeriodicUIDataSource: task: AFTER SLEEP"); 
             }
             catch(InterruptedException ex) {
                 Log.i(MeerkatApplication.TAG, "AbstractPeriodicUIDataSource: task: interrupted"); 
@@ -72,7 +71,7 @@ public abstract class AbstractPeriodicUIDataSource implements IDataSource
 
         protected void onPostExecute(Void result)
         {
-            Log.i(MeerkatApplication.TAG, "AbstractPeriodicUIDataSource.WaitTask.onPostExecute");
+            Log.d(MeerkatApplication.TAG, "\tAbstractPeriodicUIDataSource.WaitTask.onPostExecute");
             AbstractPeriodicUIDataSource.this.tick();
             if (AbstractPeriodicUIDataSource.this.mRun) {
                 new WaitTask().execute(AbstractPeriodicUIDataSource.this.mPeriodMs);

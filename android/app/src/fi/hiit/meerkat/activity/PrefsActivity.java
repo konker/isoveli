@@ -1,5 +1,6 @@
 package fi.hiit.meerkat.activity;
 
+/*
 import android.util.Log;
 import android.os.Bundle;
 import android.content.Intent;
@@ -15,7 +16,6 @@ public class PrefsActivity extends SherlockPreferenceActivity
 {
     private MeerkatApplication app;
 
-    /** Called when the activity is first created. */
     @Override
     public void onCreate(Bundle savedInstanceState)
     {
@@ -28,7 +28,6 @@ public class PrefsActivity extends SherlockPreferenceActivity
         Log.d(MeerkatApplication.TAG, "PrefsActivity.onCreate");
     }
 
-    /* Lifecycle methods [TODO: remove if uneeded?] */
     @Override
     protected void onPause()
     {
@@ -86,4 +85,4 @@ public class PrefsActivity extends SherlockPreferenceActivity
         }
     }
 }
-
+*/

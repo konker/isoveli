@@ -17,10 +17,10 @@ public abstract class AbstractPeriodicDataSource implements IDataSource
     protected int mPeriodMs;
     protected boolean mRun;
     protected boolean mTickLock;
-    protected MeerkatApplication mApplication;
 
     public AbstractPeriodicDataSource(IDataSink sink, byte channelId, int periodMs)
     {
+        Log.d(MeerkatApplication.TAG, "\tAbstractPeriodicDataSource.ctor");
         mPeriodMs = periodMs;
         mChannelId = channelId;
         mSink = sink;
@@ -32,25 +32,19 @@ public abstract class AbstractPeriodicDataSource implements IDataSource
     public abstract void tick();
 
     @Override
-    public boolean init(MeerkatApplication application) {
-        mApplication = application;
-        return true;
-    }
-
-    @Override
     public void start()
     {
+        Log.d(MeerkatApplication.TAG, "\tAbstractPeriodicDataSource.start");
         mRun = true;
         mTickLock = false;
         mThread = new Thread(this);
         mThread.start();
-        Log.i(MeerkatApplication.TAG, "AbstractPeriodicDataSource.start");
     }
 
     @Override
     public void run()
     {
-        Log.i(MeerkatApplication.TAG, "AbstractPeriodicDataSource.run");
+        Log.d(MeerkatApplication.TAG, "\tAbstractPeriodicDataSource.run");
         try {
             while (mRun) {
                 if (!mTickLock) {
@@ -78,8 +72,14 @@ public abstract class AbstractPeriodicDataSource implements IDataSource
     @Override
     public void stop()
     {
+        Log.d(MeerkatApplication.TAG, "\tAbstractPeriodicDataSource.stop");
         mRun = false;
-        Log.i(MeerkatApplication.TAG, "AbstractPeriodicDataSource.stop");
+    }
+
+    @Override
+    public boolean isRunning()
+    {
+        return mRun;
     }
 }
 

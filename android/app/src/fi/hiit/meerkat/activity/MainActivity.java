@@ -31,7 +31,7 @@ import java.lang.InterruptedException;
 
 import fi.hiit.meerkat.R;
 import fi.hiit.meerkat.MeerkatApplication;
-import fi.hiit.meerkat.service.MeerkatService;
+//import fi.hiit.meerkat.service.MeerkatService;
 import fi.hiit.meerkat.datasink.*;
 import fi.hiit.meerkat.view.CameraPreview;
 
@@ -41,7 +41,6 @@ public class MainActivity extends Activity
     private static int counter = 0;
 
     private MeerkatApplication mApplication;
-    private UsbDataSink mDataSink;
     private CameraPreview mPreview;
     private PictureCallback mPictureCallback;
 
@@ -49,29 +48,16 @@ public class MainActivity extends Activity
     @Override
     public void onCreate(Bundle savedInstanceState)
     {
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.main);
+        Log.d(MeerkatApplication.TAG, "Main.onCreate");
 
+        super.onCreate(savedInstanceState);
+
+        setContentView(R.layout.main);
         mApplication = (MeerkatApplication)getApplication();
 
         setupUi();
 
-        Log.d(MeerkatApplication.TAG, "Main.onCreate");
     }
-
-    private void start()
-    {
-        Intent intent = new Intent(this, MeerkatService.class);
-        startService(intent);
-        mApplication.setActive(true);
-    }
-    private void stop()
-    {
-        Intent intent = new Intent(this, MeerkatService.class);
-        stopService(intent);
-        mApplication.setActive(false);
-    }
-
 
     private void setupUi()
     {
@@ -88,11 +74,11 @@ public class MainActivity extends Activity
             public void onClick(View view) {
                 Log.d(MeerkatApplication.TAG, "Main.buttonMasterOnOffToggle clicked");
                 if (mApplication.isActive()) {
-                    stop();
+                    mApplication.stop();
                     ((Button)view).setText(getString(R.string.start));
                 }
                 else {
-                    start();
+                    mApplication.start();
                     ((Button)view).setText(getString(R.string.stop));
                 }
             }
@@ -131,8 +117,8 @@ public class MainActivity extends Activity
     @Override
     protected void onPause()
     {
-        super.onPause();
         Log.d(MeerkatApplication.TAG, "Main.onPause");
+        super.onPause();
 
         if (mApplication.mCamera != null) {
             mApplication.mCamera.release();
@@ -142,8 +128,8 @@ public class MainActivity extends Activity
     @Override
     protected void onResume()
     {
-        super.onResume();
         Log.d(MeerkatApplication.TAG, "Main.onResume");
+        super.onResume();
 
         try {
             mApplication.mCamera = Camera.open();
@@ -165,31 +151,30 @@ public class MainActivity extends Activity
     @Override
     protected void onStart()
     {
-        super.onStart();
         Log.d(MeerkatApplication.TAG, "Main.onStart");
+        super.onStart();
     }
 
     @Override
     protected void onRestart()
     {
-        super.onRestart();
         Log.d(MeerkatApplication.TAG, "Main.onRestart");
+        super.onRestart();
     }
 
     @Override
     protected void onStop()
     {
-        super.onStop();
         Log.d(MeerkatApplication.TAG, "Main.onStop");
+        super.onStop();
     }
 
     @Override
     protected void onDestroy()
     {
-        super.onDestroy();
-
-        stop();
         Log.d(MeerkatApplication.TAG, "Main.onDestroy");
+        super.onDestroy();
+        //mApplication.stop();
     }
 }
 

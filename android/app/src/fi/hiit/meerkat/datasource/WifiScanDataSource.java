@@ -29,6 +29,7 @@ public class WifiScanDataSource extends AbstractPeriodicDataSource
     public WifiScanDataSource(IDataSink sink, byte channelId, int periodMs)
     {
         super(sink, channelId, periodMs);
+        Log.d(MeerkatApplication.TAG, "WifiScanDataSource.ctor");
         mGson = new Gson();
     }
 
@@ -45,21 +46,32 @@ public class WifiScanDataSource extends AbstractPeriodicDataSource
     }
 
     @Override
-    public void stop()
+    public void start()
     {
-        Log.i(MeerkatApplication.TAG,  "WifiScanDataSource.stop");
-
-        mApplication.unregisterReceiver(mReceiver);
-        super.stop();
+        Log.d(MeerkatApplication.TAG,  "WifiScanDataSource.start");
+        if (init()) {
+            super.start();
+        }
     }
 
     @Override
-    public boolean init(MeerkatApplication application)
+    public void stop()
     {
-        Log.i(MeerkatApplication.TAG,  "WifiScanDataSource.init");
-        super.init(application);
+        Log.d(MeerkatApplication.TAG,  "WifiScanDataSource.stop");
+        if (mReceiver != null) {
+            MeerkatApplication.getInstance().unregisterReceiver(mReceiver);
+            mReceiver = null;
+        }
+        super.stop();
+    }
 
-        mWifiManager = (WifiManager)mApplication.getSystemService(Context.WIFI_SERVICE);
+    public boolean init()
+    {
+        Log.d(MeerkatApplication.TAG,  "WifiScanDataSource.init");
+
+        MeerkatApplication application = MeerkatApplication.getInstance();
+
+        mWifiManager = (WifiManager)application.getSystemService(Context.WIFI_SERVICE);
         if (mWifiManager.isWifiEnabled() == false) {
             // [FIXME: how should this be handled?]
             Log.i(MeerkatApplication.TAG,  "Wifi is disabled... enabling.");
@@ -76,16 +88,15 @@ public class WifiScanDataSource extends AbstractPeriodicDataSource
                 }
             }
         };
-        mApplication.registerReceiver(mReceiver,
+        application.registerReceiver(mReceiver,
                 new IntentFilter(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION));
-
         return true;
     }
 
     @Override
     public void tick()
     {
-        Log.i(MeerkatApplication.TAG,  "WifiScanDataSource.tick");
+        Log.d(MeerkatApplication.TAG,  "WifiScanDataSource.tick");
         if (mResults != null) {
 
             // serialize results to JSON

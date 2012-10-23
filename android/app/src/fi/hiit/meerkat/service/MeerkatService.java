@@ -1,5 +1,6 @@
 package fi.hiit.meerkat.service;
 
+/**
 import java.util.HashMap;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -25,8 +26,6 @@ import fi.hiit.meerkat.activity.MainActivity;
 import fi.hiit.meerkat.datasink.*;
 import fi.hiit.meerkat.datasource.*;
 
-/**
-  */
 public class MeerkatService extends Service
 {
     private static final String ACTION_USB_PERMISSION =
@@ -124,3 +123,5 @@ public class MeerkatService extends Service
         return null;
     }
 }
+  */
+

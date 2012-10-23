@@ -14,6 +14,7 @@ public class DummyDataSource extends AbstractPeriodicDataSource
     public DummyDataSource(IDataSink sink, byte channelId, int periodMs)
     {
         super(sink, channelId, periodMs);
+        Log.d(MeerkatApplication.TAG, "DummyDataSource.ctor");
         i = 0;
     }
 
@@ -32,8 +33,10 @@ public class DummyDataSource extends AbstractPeriodicDataSource
     @Override
     public void tick()
     {
+        Log.d(MeerkatApplication.TAG, "DummyDataSource.tick");
+
         ++i;
-        byte[] payload = new byte[IDataSink.PACKET_MAX_BYTES - 1];
+        byte[] payload = new byte[64];
         for (int j=0; j<payload.length; j++) {
             payload[j] = (byte)((48 + i) % 255);
         }
