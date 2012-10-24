@@ -11,7 +11,7 @@ import sys
 import csv
 from storage.sqlite import Storage
 
-from config import config
+from config.config import config
 
 """
 Print each database record in csv format to stdout

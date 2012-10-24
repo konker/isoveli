@@ -31,12 +31,14 @@ public class UsbController implements IDataSink, Runnable
     private Thread mListenThread;
     private boolean mActive;
     private boolean mListening;
+    private byte[] raw;
     
     public UsbController()
     {
         mActive = false;
         mListening = false;
         mProtocol = new UsbProtocol();
+        raw = new byte[MAX_IN_PACKET_SIZE];
     }
 
     @Override
@@ -57,7 +59,7 @@ public class UsbController implements IDataSink, Runnable
     public void close()
     {
         Log.d(MeerkatApplication.TAG, "UsbController.close");
-        //stopListener();
+        ///stopListener();
         closeAccessory();
     }
 
@@ -79,10 +81,37 @@ public class UsbController implements IDataSink, Runnable
                     throw new DataSinkPacketTooBigException();
                 }
                 mOutputStream.write(makePacket(channelId, data));
+                /*
+                if (channelId == (byte)0x0) {
+                    read();
+                }
+                */
             }
             catch (IOException ex) {
                 // [TODO: should this be thrown up?]
                 Log.d(MeerkatApplication.TAG, "IOException: " + ex);
+            }
+        }
+    }
+
+    public synchronized void read()
+    {
+        // [FIXME: should he storeAndExecute be inside try for IOException?]
+        if (mInputStream != null) {
+            int read = 0;
+            try {
+                read = mInputStream.read(raw, 0, MAX_IN_PACKET_SIZE);
+            }
+            catch (IOException ioe) {
+                //Log.i(MeerkatApplication.TAG, "UsbController: run: IOException: " + ioe); 
+            }
+
+            if (read > 0) {
+                String packet = getPacket(raw, read);
+                Log.d(MeerkatApplication.TAG, "UsbController.run: got packet: " + packet);
+
+                // Send to the protocol adapter to deal with
+                mProtocol.storeAndExecute(packet);
             }
         }
     }
@@ -108,22 +137,24 @@ public class UsbController implements IDataSink, Runnable
         try {
             while (mListening) {
                 // [FIXME: does this need to be re-initialized each time?]
-                byte[] packet = new byte[MAX_IN_PACKET_SIZE];
+                byte[] raw = new byte[MAX_IN_PACKET_SIZE];
                 // [FIXME: should he storeAndExecute be inside try for IOException?]
                 try {
-                    if (mInputStream.read(packet, 0, MAX_IN_PACKET_SIZE) > 0) {
-                        Log.d(MeerkatApplication.TAG, "UsbController.run: got packet: " + new String(packet));
+                    int read = mInputStream.read(raw, 0, MAX_IN_PACKET_SIZE);
+                    if (read > 0) {
+                        String packet = getPacket(raw, read);
+                        Log.d(MeerkatApplication.TAG, "UsbController.run: got packet: " + packet);
 
                         // Send to the protocol adapter to deal with
                         mProtocol.storeAndExecute(packet);
                     }
                 }
                 catch (IOException ioe) {
-                    Log.i(MeerkatApplication.TAG, "UsbController: run: IOException: " + ioe); 
+                    //Log.i(MeerkatApplication.TAG, "UsbController: run: IOException: " + ioe); 
                 }
 
                 // [FIXME: do we need this?]
-                Thread.sleep(1000);
+                Thread.sleep(5000);
             }
         }
         catch(InterruptedException ex) {
@@ -137,6 +168,13 @@ public class UsbController implements IDataSink, Runnable
         packet[0] = channelId;
         System.arraycopy(data, 0, packet, 1, data.length);
         return packet;
+    }
+
+    private synchronized String getPacket(byte[] data, int len)
+    {
+        byte[] packet = new byte[len];
+        System.arraycopy(data, 0, packet, 0, len);
+        return new String(packet);
     }
 
     // Helper methods

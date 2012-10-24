@@ -19,9 +19,8 @@ public class UsbProtocol
       to configure the data sources, so will have a more
       structured format, e.g. JSON.
     */
-    public static ICommand createCommand(byte[] raw)
+    public static ICommand createCommand(String s)
     {
-        String s = new String(raw);
         if (s.equals("START")) {
             return new StartCommand();
         }
@@ -37,9 +36,9 @@ public class UsbProtocol
         //mHistory = new ArrayList<ICommand>();
     }
 
-    public void storeAndExecute(byte[] raw)
+    public void storeAndExecute(String s)
     {
-        storeAndExecute(createCommand(raw));
+        storeAndExecute(createCommand(s));
     }
 
     public void storeAndExecute(ICommand command)
