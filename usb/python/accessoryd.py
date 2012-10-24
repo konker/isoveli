@@ -54,6 +54,7 @@ if __name__ == '__main__':
     if len(sys.argv) == 1 or sys.argv[1] == 'run':
         # Non daemon version
         try:
+            """
             accessory = Accessory(config)
             accessory.setup()
 
@@ -61,6 +62,7 @@ if __name__ == '__main__':
                                       name='accessory-thread')
             accessory_thread.setDaemon(True)
             accessory_thread.start()
+            """
 
             http_thread = Thread(target=bottle.run,
                                 kwargs=dict(host='', port='8080'),
@@ -68,10 +70,9 @@ if __name__ == '__main__':
             http_thread.setDaemon(True)
             http_thread.start()
 
-            while True:
-                command = raw_input('> ' )
-                print command
-                accessory.epOut.write(command)
+            accessory = Accessory(config)
+            accessory.setup()
+            accessory.run()
         except KeyboardInterrupt:
             # [FIXME: won't exit here until receives next input?]
             logging.info("Keyboard interrupt. Exiting.")

@@ -51,7 +51,7 @@ public class MeerkatApplication extends Application implements OnSharedPreferenc
 
         mUsbController = new UsbController();
         mUsbController.open(this);
-        initHeartbeat();
+        //initHeartbeat();
 
         initSources();
     }
@@ -62,7 +62,7 @@ public class MeerkatApplication extends Application implements OnSharedPreferenc
         Log.i(MeerkatApplication.TAG, "App.onTerminate");
         super.onTerminate();
         stopSources();
-        stopHeartbeat();
+        //stopHeartbeat();
 
         mUsbController.close();
 
@@ -82,7 +82,7 @@ public class MeerkatApplication extends Application implements OnSharedPreferenc
 
     public void initHeartbeat()
     {
-        mHeartbeat = new HeartbeatDataSource(mUsbController, (byte)0x0, 5000);
+        mHeartbeat = new HeartbeatDataSource(mUsbController, (byte)0x0, 10000);
         mHeartbeat.start();
     }
     
@@ -97,17 +97,20 @@ public class MeerkatApplication extends Application implements OnSharedPreferenc
         mSources = new HashMap<String, IDataSource>();
 
         mSources.put("WifiScanDataSource",
-                new WifiScanDataSource(mUsbController, (byte)0x20, 10000));
+                new WifiScanDataSource(mUsbController, (byte)0x20, 5000));
 
         mSources.put("BluetoothScanDataSource",
-                new BluetoothScanDataSource(mUsbController, (byte)0x30, 10000));
+                new BluetoothScanDataSource(mUsbController, (byte)0x30, 6000));
 
         mSources.put("CameraPhotoDataSource",
-                new CameraPhotoDataSource(mUsbController, (byte)0x40, 5000));
+                new CameraPhotoDataSource(mUsbController, (byte)0x40, 7000));
+
+        mSources.put("TcpdumpDataSource",
+                new TcpdumpDataSource(mUsbController, (byte)0x50, 40000, 20000));
 
         /*
-        mSources.put("HeartbeatDataSource",
-                new HeartbeatDataSource(mUsbController, (byte)0x0, 5000));
+        mSources.put("DummyDataSource",
+                new DummyDataSource(mUsbController, (byte)0x60, 7000));
                 */
     }
 

@@ -14,13 +14,20 @@ public abstract class AbstractPeriodicDataSource implements IDataSource
     protected Thread mThread;
     protected byte mChannelId;
     protected IDataSink mSink;
+    protected int mDurationMs;
     protected int mPeriodMs;
     protected boolean mRun;
     protected boolean mTickLock;
 
     public AbstractPeriodicDataSource(IDataSink sink, byte channelId, int periodMs)
     {
+        this(sink, channelId, periodMs, -1);
+    }
+
+    public AbstractPeriodicDataSource(IDataSink sink, byte channelId, int periodMs, int durationMs)
+    {
         Log.d(MeerkatApplication.TAG, "\tAbstractPeriodicDataSource.ctor");
+        mDurationMs = durationMs;
         mPeriodMs = periodMs;
         mChannelId = channelId;
         mSink = sink;

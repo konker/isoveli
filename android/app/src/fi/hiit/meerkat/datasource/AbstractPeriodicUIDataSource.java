@@ -72,8 +72,8 @@ public abstract class AbstractPeriodicUIDataSource implements IDataSource
         protected void onPostExecute(Void result)
         {
             Log.d(MeerkatApplication.TAG, "\tAbstractPeriodicUIDataSource.WaitTask.onPostExecute");
-            AbstractPeriodicUIDataSource.this.tick();
             if (AbstractPeriodicUIDataSource.this.mRun) {
+                AbstractPeriodicUIDataSource.this.tick();
                 new WaitTask().execute(AbstractPeriodicUIDataSource.this.mPeriodMs);
             }
         }
