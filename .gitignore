@@ -26,3 +26,5 @@ _scrap
 usb/python/data/*.dat
 usb/python/data/*.db
 usb/python/log/*.log
+meerkat/log/*.log
+meerkat/data/*.db
