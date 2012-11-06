@@ -27,4 +27,5 @@ usb/python/log/*.log
 meerkat/log/*.log
 meerkat/data/*.db
 meerkat/meerkat/http/static/img/meerkat.probe.camera_photo*
+meerkat/meerkat/http/static/img/camera_photo*
 meerkat/meerkat/http/static/img/latest.jpg
